@@ -9,6 +9,11 @@ export interface MoneroConfig {
   rpcBindPort: string;
   restrictRpc: boolean;
   rpcLogin: string;
+  rpcSsl: boolean;
+  rpcSslCert: string; 
+  rpcSslKey: string;
+  confirmExternalBind: boolean;
+  rpcPaymentAllowFreeLoopback: boolean;
   
   // P2P settings
   p2pBindIp: string;
@@ -16,18 +21,39 @@ export interface MoneroConfig {
   p2pExternalPort: string;
   hideMyPort: boolean;
   noIgd: boolean;
+  offline: boolean;
+  allowLocalIp: boolean;
+  limitRate: string;
+  limitRateUp: string;
+  limitRateDown: string;
   
   // Tor & I2P settings
   torEnabled: boolean;
   torPath: string;
   torrcPath: string;
+  torDataPath: string;
+  torSocksPort: string;
+  txProxy: string;
+  torOnly: boolean;
+  torOnionAddress: string;
+  
   i2pEnabled: boolean;
   i2pPath: string;
+  i2pDataPath: string;
+  i2pSamPort: string;
+  i2pAnonymousInbound: string;
+  i2pOnly: boolean;
+  i2pAddress: string;
   
   // Blockchain settings
   dataDir: string;
   pruning: boolean;
   pruningSize: string;
+  blockSyncSize: string;
+  fastBlockSync: boolean;
+  checkUpdates: string;
+  useBootstrapDaemon: boolean;
+  bootstrapDaemonAddress: string;
   
   // ZMQ settings
   zmqEnabled: boolean;
@@ -62,6 +88,7 @@ export interface MoneroContextType {
     networkHashrate: string;
     connections: number;
     syncStatus: number;
+    version?: string;
   };
 }
 
@@ -72,6 +99,11 @@ const defaultConfig: MoneroConfig = {
   rpcBindPort: '18081',
   restrictRpc: true,
   rpcLogin: '',
+  rpcSsl: false,
+  rpcSslCert: '',
+  rpcSslKey: '',
+  confirmExternalBind: false,
+  rpcPaymentAllowFreeLoopback: true,
   
   // P2P settings
   p2pBindIp: '0.0.0.0',
@@ -79,18 +111,39 @@ const defaultConfig: MoneroConfig = {
   p2pExternalPort: '18080',
   hideMyPort: false,
   noIgd: false,
+  offline: false,
+  allowLocalIp: false,
+  limitRate: '',
+  limitRateUp: '',
+  limitRateDown: '',
   
   // Tor & I2P settings
   torEnabled: false,
   torPath: './tor/tor.exe',
   torrcPath: './tor/torrc',
+  torDataPath: './tor/data',
+  torSocksPort: '9050',
+  txProxy: 'tor,127.0.0.1:9050,10',
+  torOnly: false,
+  torOnionAddress: '',
+  
   i2pEnabled: false,
   i2pPath: './i2p/i2p.exe',
+  i2pDataPath: './i2p/data',
+  i2pSamPort: '7656',
+  i2pAnonymousInbound: '',
+  i2pOnly: false,
+  i2pAddress: '',
   
   // Blockchain settings
   dataDir: './blockchain',
   pruning: false,
   pruningSize: '1000',
+  blockSyncSize: '10',
+  fastBlockSync: true,
+  checkUpdates: 'enabled',
+  useBootstrapDaemon: false,
+  bootstrapDaemonAddress: '',
   
   // ZMQ settings
   zmqEnabled: false,
@@ -109,6 +162,7 @@ const defaultStatus = {
   networkHashrate: '0 H/s',
   connections: 0,
   syncStatus: 0,
+  version: 'v0.18.2.2',
 };
 
 const defaultLogs: LogData = {
@@ -147,6 +201,31 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     
     return () => clearInterval(logInterval);
   }, [isRunning, statusInfo.blockHeight]);
+
+  // Generate onion address and I2P address when starting
+  useEffect(() => {
+    if (isRunning) {
+      if (config.torEnabled && !config.torOnionAddress) {
+        // Simulate generating/reading Tor onion address
+        setTimeout(() => {
+          setConfig(prev => ({
+            ...prev,
+            torOnionAddress: `${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}.onion`
+          }));
+        }, 5000);
+      }
+      
+      if (config.i2pEnabled && !config.i2pAddress) {
+        // Simulate generating/reading I2P address
+        setTimeout(() => {
+          setConfig(prev => ({
+            ...prev,
+            i2pAddress: `${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}.b32.i2p`
+          }));
+        }, 7000);
+      }
+    }
+  }, [isRunning, config.torEnabled, config.i2pEnabled]);
 
   const startNode = () => {
     if (isRunning) return;

@@ -29,6 +29,13 @@ export const generateCommandLine = (config: any): string => {
     cmd += ` --rpc-bind-ip=${config.rpcBindIp} --rpc-bind-port=${config.rpcBindPort}`;
     if (config.restrictRpc) cmd += ' --restricted-rpc';
     if (config.rpcLogin) cmd += ` --rpc-login=${config.rpcLogin}`;
+    if (config.rpcSsl) {
+      cmd += ' --rpc-ssl enabled';
+      if (config.rpcSslCert) cmd += ` --rpc-ssl-certificate=${config.rpcSslCert}`;
+      if (config.rpcSslKey) cmd += ` --rpc-ssl-key=${config.rpcSslKey}`;
+    }
+    if (config.confirmExternalBind) cmd += ' --confirm-external-bind';
+    if (config.rpcPaymentAllowFreeLoopback) cmd += ' --rpc-payment-allow-free-loopback';
   } else {
     cmd += ' --no-rpc';
   }
@@ -38,21 +45,39 @@ export const generateCommandLine = (config: any): string => {
   if (config.p2pExternalPort) cmd += ` --p2p-external-port=${config.p2pExternalPort}`;
   if (config.hideMyPort) cmd += ' --hide-my-port';
   if (config.noIgd) cmd += ' --no-igd';
+  if (config.offline) cmd += ' --offline';
+  if (config.allowLocalIp) cmd += ' --allow-local-ip';
+  if (config.limitRate) cmd += ` --limit-rate=${config.limitRate}`;
+  if (config.limitRateUp) cmd += ` --limit-rate-up=${config.limitRateUp}`;
+  if (config.limitRateDown) cmd += ` --limit-rate-down=${config.limitRateDown}`;
   
   // Tor & I2P
   if (config.torEnabled) {
-    cmd += ` --tx-proxy=tor,127.0.0.1:9050,10`;
-    // Additional Tor settings would be added here
+    if (config.txProxy) cmd += ` --tx-proxy=${config.txProxy}`;
+    if (config.torOnly) cmd += ' --anonymous-inbound=127.0.0.1:18081,127.0.0.1:18082 --tx-proxy-tor-only';
   }
   
   if (config.i2pEnabled) {
-    cmd += ' --anonymous-inbound=YOUR_I2P.b32.i2p:1,127.0.0.1:30000';
-    // Additional I2P settings would be added here
+    if (config.i2pAnonymousInbound) cmd += ` --anonymous-inbound=${config.i2pAnonymousInbound}`;
+    if (config.i2pOnly) cmd += ' --tx-proxy-i2p-only';
   }
   
   // Blockchain settings
   cmd += ` --data-dir=${config.dataDir}`;
   if (config.pruning) cmd += ` --prune-blockchain --pruning-seed=${config.pruningSize}`;
+  if (config.blockSyncSize) cmd += ` --block-sync-size=${config.blockSyncSize}`;
+  if (config.fastBlockSync) cmd += ' --fast-block-sync';
+  
+  if (config.checkUpdates !== 'disabled') {
+    cmd += ' --check-updates';
+    if (config.checkUpdates === 'auto') cmd += '=auto';
+  } else {
+    cmd += ' --no-updates';
+  }
+  
+  if (config.useBootstrapDaemon && config.bootstrapDaemonAddress) {
+    cmd += ` --bootstrap-daemon-address=${config.bootstrapDaemonAddress}`;
+  }
   
   // ZMQ settings
   if (config.zmqEnabled) {
@@ -75,5 +100,58 @@ export const getFilePath = (): Promise<string> => {
     setTimeout(() => {
       resolve('./path/to/selected/file.txt');
     }, 500);
+  });
+};
+
+// Function to get Tor onion address from hostname file
+export const getTorOnionAddress = (dataPath: string): Promise<string> => {
+  // In a real app, this would read from the file system
+  // For our web demo, we'll simulate it
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      // Generate a random onion address for demo purposes
+      const randomString = Math.random().toString(36).substring(2, 15);
+      resolve(`${randomString}${Math.random().toString(36).substring(2, 15)}.onion`);
+    }, 1000);
+  });
+};
+
+// Function to get I2P b32 address
+export const getI2PAddress = (dataPath: string): Promise<string> => {
+  // In a real app, this would execute the command to derive the address
+  // For our web demo, we'll simulate it
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      // Generate a random I2P address for demo purposes
+      const randomString = Math.random().toString(36).substring(2, 15);
+      resolve(`${randomString}${Math.random().toString(36).substring(2, 15)}.b32.i2p`);
+    }, 1000);
+  });
+};
+
+// Function to test Tor connectivity
+export const testTorConnectivity = (): Promise<{ success: boolean, output: string }> => {
+  // In a real app, this would execute curl via socks5 to check.torproject.org
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        success: true,
+        output: '{"IsTor":true,"IP":"198.51.100.123"}'
+      });
+    }, 1500);
+  });
+};
+
+// Function to test I2P connectivity
+export const testI2PConnectivity = (): Promise<{ success: boolean, output: string }> => {
+  // In a real app, this would execute the command to check I2P connectivity
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const randomString = Math.random().toString(36).substring(2, 15);
+      resolve({
+        success: true,
+        output: `${randomString}${Math.random().toString(36).substring(2, 15)}.b32.i2p`
+      });
+    }, 1500);
   });
 };
