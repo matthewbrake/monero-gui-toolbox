@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useMonero } from '@/contexts/MoneroContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -360,7 +359,7 @@ const StatusTab: React.FC = () => {
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">Service Port:</span>
-                              <span className="font-medium">{(config.i2pAnonymousInbound || "").split(',')[0]?.split(':')[1] || '1'}</span>
+                              <span className="font-medium">{(config.anonymousInboundI2p || "").split(',')[0]?.split(':')[1] || '1'}</span>
                             </div>
                             <Button size="sm" variant="outline" className="w-full mt-1">Copy I2P Address</Button>
                           </div>
