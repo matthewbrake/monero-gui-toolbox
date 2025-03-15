@@ -3,7 +3,31 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 
 export interface MoneroConfig {
-  // Network settings
+  // General/Basic settings
+  dataDir: string;
+  logLevel: number;
+  noConsoleLog: boolean;
+  maxLogFileSize: string;
+  maxLogFiles: string;
+  
+  // Checkpoints and security
+  enforceCheckpoints: boolean;
+  disableCheckpoints: boolean;
+  banList: string;
+  enableDnsBlocklist: boolean;
+  
+  // Blockchain settings
+  pruning: boolean;
+  pruningSize: string;
+  syncPrunedBlocks: boolean;
+  blockSyncSize: string;
+  fastBlockSync: boolean;
+  checkUpdates: string;
+  useBootstrapDaemon: boolean;
+  bootstrapDaemonAddress: string;
+  dbSyncMode: string;
+  
+  // RPC settings
   rpcEnabled: boolean;
   rpcBindIp: string;
   rpcBindPort: string;
@@ -14,6 +38,7 @@ export interface MoneroConfig {
   rpcSslKey: string;
   confirmExternalBind: boolean;
   rpcPaymentAllowFreeLoopback: boolean;
+  publicNode: boolean;
   
   // P2P settings
   p2pBindIp: string;
@@ -26,8 +51,13 @@ export interface MoneroConfig {
   limitRate: string;
   limitRateUp: string;
   limitRateDown: string;
+  outPeers: string;
+  inPeers: string;
+  addPriorityNode: string;
+  addExclusiveNode: string;
+  seedNode: string;
   
-  // Tor & I2P settings
+  // Tor settings
   torEnabled: boolean;
   torPath: string;
   torrcPath: string;
@@ -35,36 +65,35 @@ export interface MoneroConfig {
   torSocksPort: string;
   txProxy: string;
   torOnly: boolean;
+  anonymousInboundTor: string;
   torOnionAddress: string;
+  padTransactions: boolean;
   
+  // I2P settings
   i2pEnabled: boolean;
   i2pPath: string;
   i2pDataPath: string;
   i2pSamPort: string;
-  i2pAnonymousInbound: string;
+  i2pProxy: string;
+  anonymousInboundI2p: string;
   i2pOnly: boolean;
   i2pAddress: string;
-  
-  // Blockchain settings
-  dataDir: string;
-  pruning: boolean;
-  pruningSize: string;
-  blockSyncSize: string;
-  fastBlockSync: boolean;
-  checkUpdates: string;
-  useBootstrapDaemon: boolean;
-  bootstrapDaemonAddress: string;
   
   // ZMQ settings
   zmqEnabled: boolean;
   zmqBindIp: string;
   zmqPubPort: string;
+  noZmq: boolean;
   
   // Miscellaneous
-  logLevel: number;
-  noConsoleLog: boolean;
   maxConcurrency: string;
-  dbSyncMode: string;
+}
+
+export interface ConnectionTestResult {
+  torConnectivity: { tested: boolean, success?: boolean, output?: string };
+  i2pConnectivity: { tested: boolean, success?: boolean, output?: string };
+  rpcConnectivity: { tested: boolean, success?: boolean, output?: string };
+  daemonVersion: { checked: boolean, current?: string, latest?: string, needsUpdate?: boolean };
 }
 
 export interface LogData {
@@ -90,10 +119,38 @@ export interface MoneroContextType {
     syncStatus: number;
     version?: string;
   };
+  testConnectivity: () => Promise<void>;
+  connectionTestResults: ConnectionTestResult;
+  downloadLatestDaemon: (platform: 'windows' | 'linux') => Promise<void>;
+  isDownloading: boolean;
 }
 
 const defaultConfig: MoneroConfig = {
-  // Network settings
+  // General/Basic settings
+  dataDir: './blockchain',
+  logLevel: 0,
+  noConsoleLog: false,
+  maxLogFileSize: '104850000',
+  maxLogFiles: '50',
+  
+  // Checkpoints and security
+  enforceCheckpoints: true,
+  disableCheckpoints: false,
+  banList: '',
+  enableDnsBlocklist: true,
+  
+  // Blockchain settings
+  pruning: false,
+  pruningSize: '1000',
+  syncPrunedBlocks: false,
+  blockSyncSize: '10',
+  fastBlockSync: true,
+  checkUpdates: 'enabled',
+  useBootstrapDaemon: false,
+  bootstrapDaemonAddress: '',
+  dbSyncMode: 'fast',
+  
+  // RPC settings
   rpcEnabled: true,
   rpcBindIp: '127.0.0.1',
   rpcBindPort: '18081',
@@ -104,6 +161,7 @@ const defaultConfig: MoneroConfig = {
   rpcSslKey: '',
   confirmExternalBind: false,
   rpcPaymentAllowFreeLoopback: true,
+  publicNode: false,
   
   // P2P settings
   p2pBindIp: '0.0.0.0',
@@ -114,10 +172,15 @@ const defaultConfig: MoneroConfig = {
   offline: false,
   allowLocalIp: false,
   limitRate: '',
-  limitRateUp: '',
-  limitRateDown: '',
+  limitRateUp: '2048',
+  limitRateDown: '8192',
+  outPeers: '12',
+  inPeers: '-1',
+  addPriorityNode: '',
+  addExclusiveNode: '',
+  seedNode: '',
   
-  // Tor & I2P settings
+  // Tor settings
   torEnabled: false,
   torPath: './tor/tor.exe',
   torrcPath: './tor/torrc',
@@ -125,36 +188,35 @@ const defaultConfig: MoneroConfig = {
   torSocksPort: '9050',
   txProxy: 'tor,127.0.0.1:9050,10',
   torOnly: false,
+  anonymousInboundTor: '',
   torOnionAddress: '',
+  padTransactions: false,
   
+  // I2P settings
   i2pEnabled: false,
   i2pPath: './i2p/i2p.exe',
   i2pDataPath: './i2p/data',
   i2pSamPort: '7656',
-  i2pAnonymousInbound: '',
+  i2pProxy: 'i2p,127.0.0.1:4447',
+  anonymousInboundI2p: '',
   i2pOnly: false,
   i2pAddress: '',
-  
-  // Blockchain settings
-  dataDir: './blockchain',
-  pruning: false,
-  pruningSize: '1000',
-  blockSyncSize: '10',
-  fastBlockSync: true,
-  checkUpdates: 'enabled',
-  useBootstrapDaemon: false,
-  bootstrapDaemonAddress: '',
   
   // ZMQ settings
   zmqEnabled: false,
   zmqBindIp: '127.0.0.1',
   zmqPubPort: '18082',
+  noZmq: true,
   
   // Miscellaneous
-  logLevel: 0,
-  noConsoleLog: false,
   maxConcurrency: '4',
-  dbSyncMode: 'fast',
+};
+
+const defaultConnectionTestResults: ConnectionTestResult = {
+  torConnectivity: { tested: false },
+  i2pConnectivity: { tested: false },
+  rpcConnectivity: { tested: false },
+  daemonVersion: { checked: false },
 };
 
 const defaultStatus = {
@@ -178,6 +240,8 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [logs, setLogs] = useState<LogData>(defaultLogs);
   const [activeTab, setActiveTab] = useState('config');
   const [statusInfo, setStatusInfo] = useState(defaultStatus);
+  const [connectionTestResults, setConnectionTestResults] = useState<ConnectionTestResult>(defaultConnectionTestResults);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Simulating logs updating when daemon is running
   useEffect(() => {
@@ -309,6 +373,168 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const testConnectivity = async () => {
+    // Test RPC connectivity
+    const rpcUrl = `http://${config.rpcBindIp}:${config.rpcBindPort}/json_rpc`;
+    
+    // Reset all test results
+    setConnectionTestResults({
+      torConnectivity: { tested: false },
+      i2pConnectivity: { tested: false },
+      rpcConnectivity: { tested: false },
+      daemonVersion: { checked: false }
+    });
+    
+    // Only test if daemon is running
+    if (!isRunning) {
+      toast({
+        variant: "destructive",
+        title: "Test Failed",
+        description: "Daemon must be running to test connectivity.",
+      });
+      return;
+    }
+
+    toast({
+      title: "Testing Connections",
+      description: "Running connectivity tests...",
+    });
+    
+    // Test RPC if enabled
+    if (config.rpcEnabled) {
+      try {
+        const { testRpcConnectivity } = await import('@/utils/moneroUtils');
+        const result = await testRpcConnectivity(rpcUrl);
+        setConnectionTestResults(prev => ({
+          ...prev,
+          rpcConnectivity: { 
+            tested: true, 
+            success: result.success, 
+            output: result.output 
+          }
+        }));
+      } catch (error) {
+        setConnectionTestResults(prev => ({
+          ...prev,
+          rpcConnectivity: { 
+            tested: true, 
+            success: false, 
+            output: error instanceof Error ? error.message : "Unknown error" 
+          }
+        }));
+      }
+    }
+
+    // Test Tor if enabled
+    if (config.torEnabled) {
+      try {
+        const { testTorConnectivity } = await import('@/utils/moneroUtils');
+        const result = await testTorConnectivity();
+        setConnectionTestResults(prev => ({
+          ...prev,
+          torConnectivity: { 
+            tested: true, 
+            success: result.success, 
+            output: result.output 
+          }
+        }));
+      } catch (error) {
+        setConnectionTestResults(prev => ({
+          ...prev,
+          torConnectivity: { 
+            tested: true, 
+            success: false, 
+            output: error instanceof Error ? error.message : "Unknown error" 
+          }
+        }));
+      }
+    }
+
+    // Test I2P if enabled
+    if (config.i2pEnabled) {
+      try {
+        const { testI2PConnectivity } = await import('@/utils/moneroUtils');
+        const result = await testI2PConnectivity();
+        setConnectionTestResults(prev => ({
+          ...prev,
+          i2pConnectivity: { 
+            tested: true, 
+            success: result.success, 
+            output: result.output 
+          }
+        }));
+      } catch (error) {
+        setConnectionTestResults(prev => ({
+          ...prev,
+          i2pConnectivity: { 
+            tested: true, 
+            success: false, 
+            output: error instanceof Error ? error.message : "Unknown error" 
+          }
+        }));
+      }
+    }
+
+    // Check daemon version
+    try {
+      const { checkDaemonVersion } = await import('@/utils/moneroUtils');
+      const result = await checkDaemonVersion();
+      setConnectionTestResults(prev => ({
+        ...prev,
+        daemonVersion: { 
+          checked: true, 
+          current: result.current, 
+          latest: result.latest, 
+          needsUpdate: result.needsUpdate 
+        }
+      }));
+    } catch (error) {
+      setConnectionTestResults(prev => ({
+        ...prev,
+        daemonVersion: { 
+          checked: true, 
+          current: "Unknown", 
+          latest: "Unknown", 
+          needsUpdate: false 
+        }
+      }));
+    }
+
+    toast({
+      title: "Tests Completed",
+      description: "Connectivity tests have completed.",
+    });
+  };
+
+  const downloadLatestDaemon = async (platform: 'windows' | 'linux') => {
+    setIsDownloading(true);
+    try {
+      const { downloadLatestDaemon } = await import('@/utils/moneroUtils');
+      const result = await downloadLatestDaemon(platform);
+      
+      if (result.success) {
+        toast({
+          title: "Download Complete",
+          description: result.message,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Download Failed",
+          description: result.message,
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Download Failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <MoneroContext.Provider
       value={{
@@ -323,6 +549,10 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         saveConfig,
         loadConfig,
         statusInfo,
+        testConnectivity,
+        connectionTestResults,
+        downloadLatestDaemon,
+        isDownloading
       }}
     >
       {children}

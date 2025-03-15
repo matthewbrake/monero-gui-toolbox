@@ -8,18 +8,22 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Folder, ChevronDown, ChevronUp } from 'lucide-react';
+import { 
+  Folder, ChevronDown, ChevronUp, RefreshCw, 
+  Shield, Globe, Zap, Server, Settings
+} from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { generateCommandLine, getFilePath } from '@/utils/moneroUtils';
 
 const ConfigTab: React.FC = () => {
   const { config, setConfig } = useMonero();
   const [openSections, setOpenSections] = React.useState({
-    rpc: true,
+    general: true,
+    blockchain: false,
+    rpc: false,
     p2p: false,
     tor: config.torEnabled,
     i2p: config.i2pEnabled,
-    blockchain: false,
     zmq: false,
     misc: false
   });
@@ -68,14 +72,270 @@ const ConfigTab: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="network" className="w-full">
+          <Tabs defaultValue="general" className="w-full">
             <TabsList className="grid grid-cols-4 mb-6">
-              <TabsTrigger value="network">Network</TabsTrigger>
-              <TabsTrigger value="privacy">Privacy</TabsTrigger>
-              <TabsTrigger value="blockchain">Blockchain</TabsTrigger>
-              <TabsTrigger value="advanced">Advanced</TabsTrigger>
+              <TabsTrigger value="general" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                <span>General</span>
+              </TabsTrigger>
+              <TabsTrigger value="network" className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                <span>Network</span>
+              </TabsTrigger>
+              <TabsTrigger value="privacy" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                <span>Privacy</span>
+              </TabsTrigger>
+              <TabsTrigger value="advanced" className="flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                <span>Advanced</span>
+              </TabsTrigger>
             </TabsList>
 
+            {/* GENERAL TAB */}
+            <TabsContent value="general" className="space-y-4">
+              {/* General Settings */}
+              <Collapsible 
+                open={openSections.general} 
+                onOpenChange={() => toggleSection('general')}
+                className="border rounded-md"
+              >
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
+                  <div className="font-medium flex items-center gap-2">
+                    <Settings className="h-5 w-5" /> 
+                    General Settings
+                  </div>
+                  {openSections.general ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="p-4 pt-0 border-t">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="data-dir">Blockchain Data Directory</Label>
+                      <div className="flex space-x-2">
+                        <Input
+                          id="data-dir"
+                          value={config.dataDir}
+                          onChange={(e) => handleChange('dataDir', e.target.value)}
+                          className="flex-1"
+                          placeholder="./blockchain"
+                        />
+                        <Button variant="outline" onClick={() => browsePath('dataDir')} size="icon">
+                          <Folder className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <Label htmlFor="log-level">Log Level</Label>
+                        <span className="text-sm text-muted-foreground">{config.logLevel}</span>
+                      </div>
+                      <Slider
+                        id="log-level"
+                        min={0}
+                        max={4}
+                        step={1}
+                        value={[config.logLevel]}
+                        onValueChange={(value) => handleChange('logLevel', value[0])}
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                        <span>Minimal</span>
+                        <span>Normal</span>
+                        <span>Detailed</span>
+                        <span>Debug</span>
+                        <span>Trace</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <Switch id="no-console" checked={config.noConsoleLog} onCheckedChange={() => handleToggle('noConsoleLog')} />
+                      <Label htmlFor="no-console">Log to File Only (No Console Output)</Label>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="max-log-file-size">Max Log File Size (bytes)</Label>
+                        <Input
+                          id="max-log-file-size"
+                          value={config.maxLogFileSize}
+                          onChange={(e) => handleChange('maxLogFileSize', e.target.value)}
+                          placeholder="104850000"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="max-log-files">Max Log Files</Label>
+                        <Input
+                          id="max-log-files"
+                          value={config.maxLogFiles}
+                          onChange={(e) => handleChange('maxLogFiles', e.target.value)}
+                          placeholder="50"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-border">
+                      <h3 className="text-sm font-semibold mb-3">Security & Checkpoints</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-3">
+                          <Switch id="enforce-checkpoints" checked={config.enforceCheckpoints} onCheckedChange={() => handleToggle('enforceCheckpoints')} />
+                          <div>
+                            <Label htmlFor="enforce-checkpoints" className="font-medium">Enforce DNS Checkpoints</Label>
+                            <p className="text-xs text-muted-foreground">Enforce centrally provided checkpoints (safer)</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Switch id="disable-checkpoints" checked={config.disableCheckpoints} onCheckedChange={() => handleToggle('disableCheckpoints')} />
+                          <div>
+                            <Label htmlFor="disable-checkpoints" className="font-medium">Disable DNS Checkpoints</Label>
+                            <p className="text-xs text-muted-foreground">Disable all centrally provided checkpoints</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Switch id="enable-dns-blocklist" checked={config.enableDnsBlocklist} onCheckedChange={() => handleToggle('enableDnsBlocklist')} />
+                          <div>
+                            <Label htmlFor="enable-dns-blocklist" className="font-medium">Enable DNS Blocklist</Label>
+                            <p className="text-xs text-muted-foreground">Use centrally maintained blocklist for known malicious IPs</p>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="ban-list">Ban List File</Label>
+                          <div className="flex space-x-2">
+                            <Input
+                              id="ban-list"
+                              value={config.banList}
+                              onChange={(e) => handleChange('banList', e.target.value)}
+                              placeholder="./ban-list.txt"
+                              className="flex-1"
+                            />
+                            <Button variant="outline" onClick={() => browsePath('banList')} size="icon">
+                              <Folder className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Blockchain Settings */}
+              <Collapsible 
+                open={openSections.blockchain} 
+                onOpenChange={() => toggleSection('blockchain')}
+                className="border rounded-md"
+              >
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
+                  <div className="font-medium flex items-center gap-2">
+                    <Server className="h-5 w-5" /> 
+                    Blockchain Settings
+                  </div>
+                  {openSections.blockchain ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="p-4 pt-0 border-t">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="pruning-toggle" className="font-medium">Blockchain Pruning</Label>
+                        <p className="text-sm text-muted-foreground">Reduce blockchain storage (1/3 of full size)</p>
+                      </div>
+                      <Switch id="pruning-toggle" checked={config.pruning} onCheckedChange={() => handleToggle('pruning')} />
+                    </div>
+
+                    {config.pruning && (
+                      <div className="pl-6 border-l-2 border-border space-y-2">
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <Label htmlFor="pruning-size">Pruning Size</Label>
+                            <span className="text-sm text-muted-foreground">{config.pruningSize}</span>
+                          </div>
+                          <Input
+                            id="pruning-size"
+                            type="number"
+                            value={config.pruningSize}
+                            onChange={(e) => handleChange('pruningSize', e.target.value)}
+                            placeholder="1000"
+                          />
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Switch id="sync-pruned-blocks" checked={config.syncPrunedBlocks} onCheckedChange={() => handleToggle('syncPrunedBlocks')} />
+                          <div>
+                            <Label htmlFor="sync-pruned-blocks" className="font-medium">Sync Pruned Blocks</Label>
+                            <p className="text-xs text-muted-foreground">Faster syncing with pruned nodes</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="block-sync-size">Block Sync Size</Label>
+                        <Input
+                          id="block-sync-size"
+                          type="number" 
+                          value={config.blockSyncSize}
+                          onChange={(e) => handleChange('blockSyncSize', e.target.value)}
+                          placeholder="10"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="db-sync-mode">Database Sync Mode</Label>
+                        <select
+                          id="db-sync-mode"
+                          value={config.dbSyncMode}
+                          onChange={(e) => handleChange('dbSyncMode', e.target.value)}
+                          className="w-full input-field"
+                        >
+                          <option value="fast">Fast (Recommended)</option>
+                          <option value="safe">Safe (Slower but safer)</option>
+                          <option value="fastest">Fastest (Risky)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="flex items-center space-x-3">
+                        <Switch id="fast-block-sync" checked={config.fastBlockSync} onCheckedChange={() => handleToggle('fastBlockSync')} />
+                        <Label htmlFor="fast-block-sync">Fast Block Sync (Skip POW Validation)</Label>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="check-updates">Check for Updates</Label>
+                        <select
+                          id="check-updates"
+                          value={config.checkUpdates}
+                          onChange={(e) => handleChange('checkUpdates', e.target.value)}
+                          className="w-full input-field"
+                        >
+                          <option value="enabled">Enabled</option>
+                          <option value="auto">Auto-update</option>
+                          <option value="disabled">Disabled</option>
+                        </select>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <Switch id="bootstrap-daemon-address" checked={config.useBootstrapDaemon} onCheckedChange={() => handleToggle('useBootstrapDaemon')} />
+                        <Label htmlFor="bootstrap-daemon-address">Use Bootstrap Daemon</Label>
+                      </div>
+                      {config.useBootstrapDaemon && (
+                        <div className="pl-6 border-l-2 border-border">
+                          <div className="space-y-2">
+                            <Label htmlFor="bootstrap-daemon-address-input">Bootstrap Daemon Address</Label>
+                            <Input 
+                              id="bootstrap-daemon-address-input"
+                              value={config.bootstrapDaemonAddress}
+                              onChange={(e) => handleChange('bootstrapDaemonAddress', e.target.value)}
+                              placeholder="node.moneroworld.com:18089"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </TabsContent>
+
+            {/* NETWORK TAB */}
             <TabsContent value="network" className="space-y-4">
               {/* RPC Interface Section */}
               <Collapsible 
@@ -84,7 +344,10 @@ const ConfigTab: React.FC = () => {
                 className="border rounded-md"
               >
                 <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
-                  <div className="font-medium">RPC Interface</div>
+                  <div className="font-medium flex items-center gap-2">
+                    <Server className="h-5 w-5" /> 
+                    RPC Interface
+                  </div>
                   <div className="flex items-center space-x-2">
                     <Switch id="rpc-toggle" checked={config.rpcEnabled} onCheckedChange={() => handleToggle('rpcEnabled')} onClick={(e) => e.stopPropagation()} />
                     {openSections.rpc ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
@@ -118,6 +381,13 @@ const ConfigTab: React.FC = () => {
                         <div>
                           <Label htmlFor="restrict-rpc" className="font-medium">Restrict RPC</Label>
                           <p className="text-sm text-muted-foreground">Restrict RPC to view-only commands</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Switch id="public-node" checked={config.publicNode} onCheckedChange={() => handleToggle('publicNode')} />
+                        <div>
+                          <Label htmlFor="public-node" className="font-medium">Public Node</Label>
+                          <p className="text-sm text-muted-foreground">Advertise this as a public node</p>
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -190,7 +460,10 @@ const ConfigTab: React.FC = () => {
                 className="border rounded-md"
               >
                 <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
-                  <div className="font-medium">P2P Network Settings</div>
+                  <div className="font-medium flex items-center gap-2">
+                    <Globe className="h-5 w-5" /> 
+                    P2P Network Settings
+                  </div>
                   {openSections.p2p ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="p-4 pt-0 border-t">
@@ -224,34 +497,86 @@ const ConfigTab: React.FC = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="limit-rate-up">Upload Limit (kB/s)</Label>
+                        <Label htmlFor="out-peers">Max Outgoing Peers</Label>
                         <Input
-                          id="limit-rate-up"
-                          type="number"
-                          value={config.limitRateUp}
-                          onChange={(e) => handleChange('limitRateUp', e.target.value)}
-                          placeholder="2048"
+                          id="out-peers"
+                          value={config.outPeers}
+                          onChange={(e) => handleChange('outPeers', e.target.value)}
+                          placeholder="12"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="limit-rate-down">Download Limit (kB/s)</Label>
+                        <Label htmlFor="in-peers">Max Incoming Peers</Label>
                         <Input
-                          id="limit-rate-down"
-                          type="number"
-                          value={config.limitRateDown}
-                          onChange={(e) => handleChange('limitRateDown', e.target.value)}
-                          placeholder="8192"
+                          id="in-peers"
+                          value={config.inPeers}
+                          onChange={(e) => handleChange('inPeers', e.target.value)}
+                          placeholder="-1"
+                        />
+                        <p className="text-xs text-muted-foreground">Use -1 for unlimited</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="add-priority-node">Add Priority Node</Label>
+                        <Input
+                          id="add-priority-node"
+                          value={config.addPriorityNode}
+                          onChange={(e) => handleChange('addPriorityNode', e.target.value)}
+                          placeholder="node.example.com:18080"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="limit-rate">Overall Limit (kB/s)</Label>
+                        <Label htmlFor="add-exclusive-node">Add Exclusive Node</Label>
                         <Input
-                          id="limit-rate"
-                          type="number"
-                          value={config.limitRate}
-                          onChange={(e) => handleChange('limitRate', e.target.value)}
-                          placeholder="1024"
+                          id="add-exclusive-node"
+                          value={config.addExclusiveNode}
+                          onChange={(e) => handleChange('addExclusiveNode', e.target.value)}
+                          placeholder="node.example.com:18080"
                         />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="seed-node">Seed Node</Label>
+                        <Input
+                          id="seed-node"
+                          value={config.seedNode}
+                          onChange={(e) => handleChange('seedNode', e.target.value)}
+                          placeholder="seed.example.com:18080"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-border">
+                      <h3 className="text-sm font-semibold mb-3">Bandwidth Limits</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="limit-rate">Overall Limit (kB/s)</Label>
+                          <Input
+                            id="limit-rate"
+                            type="number"
+                            value={config.limitRate}
+                            onChange={(e) => handleChange('limitRate', e.target.value)}
+                            placeholder="1024"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="limit-rate-up">Upload Limit (kB/s)</Label>
+                          <Input
+                            id="limit-rate-up"
+                            type="number"
+                            value={config.limitRateUp}
+                            onChange={(e) => handleChange('limitRateUp', e.target.value)}
+                            placeholder="2048"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="limit-rate-down">Download Limit (kB/s)</Label>
+                          <Input
+                            id="limit-rate-down"
+                            type="number"
+                            value={config.limitRateDown}
+                            onChange={(e) => handleChange('limitRateDown', e.target.value)}
+                            placeholder="8192"
+                          />
+                        </div>
                       </div>
                     </div>
 
@@ -276,8 +601,60 @@ const ConfigTab: React.FC = () => {
                   </div>
                 </CollapsibleContent>
               </Collapsible>
+
+              {/* ZMQ Settings */}
+              <Collapsible 
+                open={openSections.zmq} 
+                onOpenChange={() => toggleSection('zmq')}
+                className="border rounded-md"
+              >
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
+                  <div className="font-medium flex items-center gap-2">
+                    <Zap className="h-5 w-5" /> 
+                    ZeroMQ Interface
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="zmq-toggle" checked={config.zmqEnabled} onCheckedChange={() => handleToggle('zmqEnabled')} onClick={(e) => e.stopPropagation()} />
+                    {openSections.zmq ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="p-4 pt-0 border-t">
+                  {config.zmqEnabled && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="zmq-bind-ip">ZMQ Bind IP</Label>
+                          <Input
+                            id="zmq-bind-ip"
+                            value={config.zmqBindIp}
+                            onChange={(e) => handleChange('zmqBindIp', e.target.value)}
+                            placeholder="127.0.0.1"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="zmq-pub-port">ZMQ Pub Port</Label>
+                          <Input
+                            id="zmq-pub-port"
+                            value={config.zmqPubPort}
+                            onChange={(e) => handleChange('zmqPubPort', e.target.value)}
+                            placeholder="18082"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Switch id="no-zmq" checked={config.noZmq} onCheckedChange={() => handleToggle('noZmq')} />
+                        <div>
+                          <Label htmlFor="no-zmq" className="font-medium">Disable ZMQ RPC Server</Label>
+                          <p className="text-xs text-muted-foreground">Disables separate ZMQ RPC server</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
             </TabsContent>
 
+            {/* PRIVACY TAB */}
             <TabsContent value="privacy" className="space-y-4">
               {/* Tor Integration */}
               <Collapsible 
@@ -286,7 +663,10 @@ const ConfigTab: React.FC = () => {
                 className="border rounded-md"
               >
                 <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
-                  <div className="font-medium">Tor Integration</div>
+                  <div className="font-medium flex items-center gap-2">
+                    <Shield className="h-5 w-5" /> 
+                    Tor Integration
+                  </div>
                   <div className="flex items-center space-x-2">
                     <Switch id="tor-toggle" checked={config.torEnabled} onCheckedChange={() => handleToggle('torEnabled')} onClick={(e) => e.stopPropagation()} />
                     {openSections.tor ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
@@ -361,14 +741,33 @@ const ConfigTab: React.FC = () => {
                           />
                         </div>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <Switch id="tor-only" checked={config.torOnly} onCheckedChange={() => handleToggle('torOnly')} />
-                        <Label htmlFor="tor-only">Tor Only</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="anonymous-inbound-tor">Anonymous Inbound</Label>
+                        <Input
+                          id="anonymous-inbound-tor"
+                          value={config.anonymousInboundTor}
+                          onChange={(e) => handleChange('anonymousInboundTor', e.target.value)}
+                          placeholder="youraddress.onion:18083,127.0.0.1:18183,16"
+                        />
+                        <p className="text-xs text-muted-foreground">Format: address.onion:port,local_ip:local_port,max_connections</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div className="flex items-center space-x-3">
+                          <Switch id="tor-only" checked={config.torOnly} onCheckedChange={() => handleToggle('torOnly')} />
+                          <Label htmlFor="tor-only">Tor Only</Label>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Switch id="pad-transactions" checked={config.padTransactions} onCheckedChange={() => handleToggle('padTransactions')} />
+                          <Label htmlFor="pad-transactions">Pad Transactions</Label>
+                        </div>
                       </div>
                       <div className="border rounded-md p-3 bg-black/20">
                         <div className="flex justify-between items-center mb-2">
                           <Label>Tor Onion Address</Label>
-                          <Button variant="outline" size="sm">Refresh</Button>
+                          <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                            <RefreshCw className="h-3 w-3" />
+                            <span>Refresh</span>
+                          </Button>
                         </div>
                         <div className="font-mono text-xs bg-black/40 p-2 rounded-md overflow-x-auto text-monero-blue-light">
                           {config.torOnionAddress || "Not available. Start daemon to generate."}
@@ -386,7 +785,10 @@ const ConfigTab: React.FC = () => {
                 className="border rounded-md"
               >
                 <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
-                  <div className="font-medium">I2P Integration</div>
+                  <div className="font-medium flex items-center gap-2">
+                    <Shield className="h-5 w-5" /> 
+                    I2P Integration
+                  </div>
                   <div className="flex items-center space-x-2">
                     <Switch id="i2p-toggle" checked={config.i2pEnabled} onCheckedChange={() => handleToggle('i2pEnabled')} onClick={(e) => e.stopPropagation()} />
                     {openSections.i2p ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
@@ -435,14 +837,24 @@ const ConfigTab: React.FC = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="i2p-anonymous-inbound">I2P Anonymous Inbound</Label>
+                        <Label htmlFor="i2p-proxy">I2P Proxy</Label>
                         <Input
-                          id="i2p-anonymous-inbound"
-                          value={config.i2pAnonymousInbound}
-                          onChange={(e) => handleChange('i2pAnonymousInbound', e.target.value)}
-                          placeholder="youraddress.b32.i2p:1,127.0.0.1:30000"
+                          id="i2p-proxy"
+                          value={config.i2pProxy}
+                          onChange={(e) => handleChange('i2pProxy', e.target.value)}
+                          placeholder="i2p,127.0.0.1:4447"
                         />
-                        <p className="text-xs text-muted-foreground">Format: address.b32.i2p:port,local_ip:local_port</p>
+                        <p className="text-xs text-muted-foreground">Format: type,address:port</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="anonymous-inbound-i2p">Anonymous Inbound</Label>
+                        <Input
+                          id="anonymous-inbound-i2p"
+                          value={config.anonymousInboundI2p}
+                          onChange={(e) => handleChange('anonymousInboundI2p', e.target.value)}
+                          placeholder="youraddress.b32.i2p:80,127.0.0.1:18283,16"
+                        />
+                        <p className="text-xs text-muted-foreground">Format: address.b32.i2p:port,local_ip:local_port,max_connections</p>
                       </div>
                       <div className="flex items-center space-x-3">
                         <Switch id="i2p-only" checked={config.i2pOnly} onCheckedChange={() => handleToggle('i2pOnly')} />
@@ -451,7 +863,10 @@ const ConfigTab: React.FC = () => {
                       <div className="border rounded-md p-3 bg-black/20">
                         <div className="flex justify-between items-center mb-2">
                           <Label>I2P Address</Label>
-                          <Button variant="outline" size="sm">Refresh</Button>
+                          <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                            <RefreshCw className="h-3 w-3" />
+                            <span>Refresh</span>
+                          </Button>
                         </div>
                         <div className="font-mono text-xs bg-black/40 p-2 rounded-md overflow-x-auto text-monero-blue-light">
                           {config.i2pAddress || "Not available. Start daemon to generate."}
@@ -463,155 +878,8 @@ const ConfigTab: React.FC = () => {
               </Collapsible>
             </TabsContent>
 
-            <TabsContent value="blockchain" className="space-y-4">
-              {/* Blockchain Settings */}
-              <Collapsible 
-                open={openSections.blockchain} 
-                onOpenChange={() => toggleSection('blockchain')}
-                className="border rounded-md"
-              >
-                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
-                  <div className="font-medium">Blockchain Settings</div>
-                  {openSections.blockchain ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                </CollapsibleTrigger>
-                <CollapsibleContent className="p-4 pt-0 border-t">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="data-dir">Blockchain Data Directory</Label>
-                      <div className="flex space-x-2">
-                        <Input
-                          id="data-dir"
-                          value={config.dataDir}
-                          onChange={(e) => handleChange('dataDir', e.target.value)}
-                          className="flex-1"
-                          placeholder="./blockchain"
-                        />
-                        <Button variant="outline" onClick={() => browsePath('dataDir')} size="icon">
-                          <Folder className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="pruning-toggle" className="font-medium">Blockchain Pruning</Label>
-                        <p className="text-sm text-muted-foreground">Reduce blockchain storage size</p>
-                      </div>
-                      <Switch id="pruning-toggle" checked={config.pruning} onCheckedChange={() => handleToggle('pruning')} />
-                    </div>
-
-                    {config.pruning && (
-                      <div className="pl-6 border-l-2 border-border space-y-2">
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <Label htmlFor="pruning-size">Pruning Size</Label>
-                            <span className="text-sm text-muted-foreground">{config.pruningSize}</span>
-                          </div>
-                          <Input
-                            id="pruning-size"
-                            type="number"
-                            value={config.pruningSize}
-                            onChange={(e) => handleChange('pruningSize', e.target.value)}
-                            placeholder="1000"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="block-sync-size">Block Sync Size</Label>
-                        <Input
-                          id="block-sync-size"
-                          type="number" 
-                          value={config.blockSyncSize}
-                          onChange={(e) => handleChange('blockSyncSize', e.target.value)}
-                          placeholder="10"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="check-updates">Check for Updates</Label>
-                        <select
-                          id="check-updates"
-                          value={config.checkUpdates}
-                          onChange={(e) => handleChange('checkUpdates', e.target.value)}
-                          className="w-full input-field"
-                        >
-                          <option value="enabled">Enabled</option>
-                          <option value="auto">Auto-update</option>
-                          <option value="disabled">Disabled</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-2">
-                      <div className="flex items-center space-x-3">
-                        <Switch id="fast-block-sync" checked={config.fastBlockSync} onCheckedChange={() => handleToggle('fastBlockSync')} />
-                        <Label htmlFor="fast-block-sync">Fast Block Sync</Label>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Switch id="bootstrap-daemon-address" checked={config.useBootstrapDaemon} onCheckedChange={() => handleToggle('useBootstrapDaemon')} />
-                        <Label htmlFor="bootstrap-daemon-address">Use Bootstrap Daemon</Label>
-                      </div>
-                      {config.useBootstrapDaemon && (
-                        <div className="pl-6 border-l-2 border-border">
-                          <div className="space-y-2">
-                            <Label htmlFor="bootstrap-daemon-address-input">Bootstrap Daemon Address</Label>
-                            <Input 
-                              id="bootstrap-daemon-address-input"
-                              value={config.bootstrapDaemonAddress}
-                              onChange={(e) => handleChange('bootstrapDaemonAddress', e.target.value)}
-                              placeholder="node.moneroworld.com:18089"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </TabsContent>
-
+            {/* ADVANCED TAB */}
             <TabsContent value="advanced" className="space-y-4">
-              {/* ZMQ Settings */}
-              <Collapsible 
-                open={openSections.zmq} 
-                onOpenChange={() => toggleSection('zmq')}
-                className="border rounded-md"
-              >
-                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
-                  <div className="font-medium">ZeroMQ Interface</div>
-                  <div className="flex items-center space-x-2">
-                    <Switch id="zmq-toggle" checked={config.zmqEnabled} onCheckedChange={() => handleToggle('zmqEnabled')} onClick={(e) => e.stopPropagation()} />
-                    {openSections.zmq ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="p-4 pt-0 border-t">
-                  {config.zmqEnabled && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="zmq-bind-ip">ZMQ Bind IP</Label>
-                        <Input
-                          id="zmq-bind-ip"
-                          value={config.zmqBindIp}
-                          onChange={(e) => handleChange('zmqBindIp', e.target.value)}
-                          placeholder="127.0.0.1"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="zmq-pub-port">ZMQ Pub Port</Label>
-                        <Input
-                          id="zmq-pub-port"
-                          value={config.zmqPubPort}
-                          onChange={(e) => handleChange('zmqPubPort', e.target.value)}
-                          placeholder="18082"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </CollapsibleContent>
-              </Collapsible>
-
               {/* Miscellaneous Settings */}
               <Collapsible 
                 open={openSections.misc} 
@@ -619,38 +887,14 @@ const ConfigTab: React.FC = () => {
                 className="border rounded-md"
               >
                 <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
-                  <div className="font-medium">Miscellaneous Settings</div>
+                  <div className="font-medium flex items-center gap-2">
+                    <Settings className="h-5 w-5" /> 
+                    Performance & Resources
+                  </div>
                   {openSections.misc ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="p-4 pt-0 border-t">
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <Label htmlFor="log-level">Log Level</Label>
-                        <span className="text-sm text-muted-foreground">{config.logLevel}</span>
-                      </div>
-                      <Slider
-                        id="log-level"
-                        min={0}
-                        max={4}
-                        step={1}
-                        value={[config.logLevel]}
-                        onValueChange={(value) => handleChange('logLevel', value[0])}
-                      />
-                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                        <span>Minimal</span>
-                        <span>Normal</span>
-                        <span>Detailed</span>
-                        <span>Debug</span>
-                        <span>Trace</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-3">
-                      <Switch id="no-console" checked={config.noConsoleLog} onCheckedChange={() => handleToggle('noConsoleLog')} />
-                      <Label htmlFor="no-console">Disable Console Output (Log to File Only)</Label>
-                    </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="max-concurrency">Max Concurrency</Label>
                       <Input
@@ -660,20 +904,7 @@ const ConfigTab: React.FC = () => {
                         onChange={(e) => handleChange('maxConcurrency', e.target.value)}
                         placeholder="4"
                       />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="db-sync-mode">Database Sync Mode</Label>
-                      <select
-                        id="db-sync-mode"
-                        value={config.dbSyncMode}
-                        onChange={(e) => handleChange('dbSyncMode', e.target.value)}
-                        className="w-full input-field"
-                      >
-                        <option value="fast">Fast</option>
-                        <option value="safe">Safe</option>
-                        <option value="fastest">Fastest</option>
-                      </select>
+                      <p className="text-xs text-muted-foreground">Set to 0 to use number of CPU threads</p>
                     </div>
                   </div>
                 </CollapsibleContent>
