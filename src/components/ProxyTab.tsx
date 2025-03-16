@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useMonero } from '@/contexts/MoneroContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, Check, Copy, Eye, EyeOff, Folder, Power, PowerOff, RotateCcw, Terminal } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from '@/hooks/use-toast';
+import { createDirectoryStructure } from '@/utils/moneroUtils';
 
 const ProxyTab: React.FC = () => {
   const { 
@@ -30,6 +30,7 @@ const ProxyTab: React.FC = () => {
   const [i2pLogExpanded, setI2pLogExpanded] = useState(false);
   const [showTorAddress, setShowTorAddress] = useState(false);
   const [showI2pAddress, setShowI2pAddress] = useState(false);
+  const [directoryStructureCreated, setDirectoryStructureCreated] = useState(false);
   const torLogEndRef = useRef<HTMLDivElement>(null);
   const i2pLogEndRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +46,32 @@ const ProxyTab: React.FC = () => {
       i2pLogEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [logs.i2pProxy, i2pLogExpanded]);
+
+  // Initialize directory structure when component mounts
+  useEffect(() => {
+    const initializeDirectoryStructure = async () => {
+      try {
+        const result = await createDirectoryStructure('./');
+        if (result.success) {
+          setDirectoryStructureCreated(true);
+          console.log('Directory structure created:', result.message);
+        } else {
+          console.error('Failed to create directory structure:', result.message);
+          toast({
+            variant: "destructive",
+            title: "Directory setup failed",
+            description: result.message,
+          });
+        }
+      } catch (error) {
+        console.error('Error creating directory structure:', error);
+      }
+    };
+
+    if (!directoryStructureCreated) {
+      initializeDirectoryStructure();
+    }
+  }, [directoryStructureCreated]);
 
   const browsePath = async (field: keyof typeof config) => {
     try {
@@ -87,12 +114,39 @@ const ProxyTab: React.FC = () => {
         return;
       }
 
-      // Test connectivity
-      await testConnectivity();
+      const { testRpcCommand } = await import('@/utils/moneroUtils');
+      
+      // Determine proxy address based on type
+      const proxyAddress = proxyType === 'tor' 
+        ? `http://${config.torOnionAddress || 'youraddress.onion'}:18081` 
+        : `http://${config.i2pAddress || 'youraddress.b32.i2p'}:18081`;
+      
+      // Construct RPC address
+      const rpcAddress = proxyType === 'tor'
+        ? `http://${config.torOnionAddress}:18081`
+        : `http://${config.i2pAddress}:80`;
+      
+      // Test the RPC command
+      const result = await testRpcCommand(
+        proxyType,
+        proxyAddress,
+        rpcAddress,
+        config.rpcLogin
+      );
+      
+      // Update logs with the output
+      const logType = proxyType === 'tor' ? 'torProxy' : 'i2pProxy';
+      const logEntry = `[RPC Test] ${result.output}`;
+      
+      // This would normally update logs through the context
+      console.log(`${logType} log:`, logEntry);
       
       toast({
-        title: "Testing RPC connection",
-        description: `Testing RPC over ${proxyType.toUpperCase()}. Check logs for results.`,
+        title: result.success ? "RPC test successful" : "RPC test failed",
+        description: result.success 
+          ? `Successfully tested RPC over ${proxyType.toUpperCase()}` 
+          : `Failed to test RPC over ${proxyType.toUpperCase()}: ${result.output}`,
+        variant: result.success ? "default" : "destructive",
       });
     } catch (error) {
       toast({
@@ -116,11 +170,12 @@ const ProxyTab: React.FC = () => {
 
       // Import and call the restart function
       const { restartMoneroDaemon } = await import('@/utils/moneroUtils');
-      await restartMoneroDaemon();
+      const result = await restartMoneroDaemon();
       
       toast({
-        title: "Daemon restart initiated",
-        description: "Monero daemon is restarting. This may take a moment.",
+        title: result.success ? "Daemon restart initiated" : "Failed to restart daemon",
+        description: result.message,
+        variant: result.success ? "default" : "destructive",
       });
     } catch (error) {
       toast({
