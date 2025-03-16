@@ -3,13 +3,27 @@ import React from 'react';
 import { useMonero } from '@/contexts/MoneroContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Play, Square, Save, Upload } from 'lucide-react';
+import { Play, Square, Save, Upload, Network, Shield } from 'lucide-react';
 import ConfigTab from './ConfigTab';
 import StatusTab from './StatusTab';
 import LogsTab from './LogsTab';
 
 const Layout: React.FC = () => {
-  const { activeTab, setActiveTab, isRunning, startNode, stopNode, saveConfig, loadConfig } = useMonero();
+  const { 
+    activeTab, 
+    setActiveTab, 
+    isRunning, 
+    startNode, 
+    stopNode, 
+    saveConfig, 
+    loadConfig,
+    torProxyRunning,
+    i2pProxyRunning,
+    startTorProxy,
+    stopTorProxy,
+    startI2PProxy,
+    stopI2PProxy
+  } = useMonero();
 
   return (
     <div className="min-h-screen bg-background p-6 flex flex-col animate-fadeIn">
@@ -35,6 +49,54 @@ const Layout: React.FC = () => {
             <Upload className="h-4 w-4" />
             <span>Load Config</span>
           </Button>
+          
+          {/* Tor Proxy Controls */}
+          {torProxyRunning ? (
+            <Button
+              onClick={stopTorProxy}
+              variant="destructive"
+              size="sm"
+              className="flex items-center space-x-2"
+            >
+              <Shield className="h-4 w-4" />
+              <span>Stop Tor</span>
+            </Button>
+          ) : (
+            <Button
+              onClick={startTorProxy}
+              variant="default"
+              size="sm"
+              className="flex items-center space-x-2 bg-purple-700 hover:bg-purple-800"
+            >
+              <Shield className="h-4 w-4" />
+              <span>Start Tor</span>
+            </Button>
+          )}
+          
+          {/* I2P Proxy Controls */}
+          {i2pProxyRunning ? (
+            <Button
+              onClick={stopI2PProxy}
+              variant="destructive"
+              size="sm"
+              className="flex items-center space-x-2"
+            >
+              <Network className="h-4 w-4" />
+              <span>Stop I2P</span>
+            </Button>
+          ) : (
+            <Button
+              onClick={startI2PProxy}
+              variant="default"
+              size="sm"
+              className="flex items-center space-x-2 bg-blue-700 hover:bg-blue-800"
+            >
+              <Network className="h-4 w-4" />
+              <span>Start I2P</span>
+            </Button>
+          )}
+          
+          {/* Monero Daemon Controls */}
           {isRunning ? (
             <Button
               onClick={stopNode}
