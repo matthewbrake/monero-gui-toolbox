@@ -7,6 +7,7 @@ import { Play, Square, Save, Upload } from 'lucide-react';
 import ConfigTab from './ConfigTab';
 import StatusTab from './StatusTab';
 import LogsTab from './LogsTab';
+import ProxyTab from './ProxyTab';
 
 const Layout: React.FC = () => {
   const { activeTab, setActiveTab, isRunning, startNode, stopNode, saveConfig, loadConfig } = useMonero();
@@ -58,9 +59,10 @@ const Layout: React.FC = () => {
       </header>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-        <TabsList className="grid grid-cols-3 w-full max-w-md mb-6">
+        <TabsList className="grid grid-cols-4 w-full max-w-xl mb-6">
           <TabsTrigger value="config">Configuration</TabsTrigger>
           <TabsTrigger value="status">Status</TabsTrigger>
+          <TabsTrigger value="proxies">Proxies</TabsTrigger>
           <TabsTrigger value="logs">Logs</TabsTrigger>
         </TabsList>
 
@@ -70,6 +72,10 @@ const Layout: React.FC = () => {
 
         <TabsContent value="status" className="tab-transition tab-active">
           <StatusTab />
+        </TabsContent>
+
+        <TabsContent value="proxies" className="tab-transition tab-active">
+          <ProxyTab />
         </TabsContent>
 
         <TabsContent value="logs" className="tab-transition tab-active">

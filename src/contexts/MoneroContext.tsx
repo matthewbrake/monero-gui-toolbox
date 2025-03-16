@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 
@@ -99,6 +98,8 @@ export interface ConnectionTestResult {
 export interface LogData {
   console: string[];
   logFile: string[];
+  torProxy: string[];
+  i2pProxy: string[];
 }
 
 export interface MoneroContextType {
@@ -123,6 +124,12 @@ export interface MoneroContextType {
   connectionTestResults: ConnectionTestResult;
   downloadLatestDaemon: (platform: 'windows' | 'linux') => Promise<void>;
   isDownloading: boolean;
+  torProxyRunning: boolean;
+  i2pProxyRunning: boolean;
+  startTorProxy: () => void;
+  stopTorProxy: () => void;
+  startI2PProxy: () => void;
+  stopI2PProxy: () => void;
 }
 
 const defaultConfig: MoneroConfig = {
@@ -230,6 +237,8 @@ const defaultStatus = {
 const defaultLogs: LogData = {
   console: [],
   logFile: [],
+  torProxy: [],
+  i2pProxy: []
 };
 
 export const MoneroContext = createContext<MoneroContextType | undefined>(undefined);
@@ -242,6 +251,8 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [statusInfo, setStatusInfo] = useState(defaultStatus);
   const [connectionTestResults, setConnectionTestResults] = useState<ConnectionTestResult>(defaultConnectionTestResults);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [torProxyRunning, setTorProxyRunning] = useState(false);
+  const [i2pProxyRunning, setI2pProxyRunning] = useState(false);
 
   // Simulating logs updating when daemon is running
   useEffect(() => {
@@ -252,6 +263,8 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setLogs(prev => ({
         console: [...prev.console, `[${timestamp}] Monero daemon processing block ${statusInfo.blockHeight + Math.floor(Math.random() * 10)}`].slice(-100),
         logFile: [...prev.logFile, `[${timestamp}] [info] Syncing blockchain data...`].slice(-100),
+        torProxy: prev.torProxy,
+        i2pProxy: prev.i2pProxy,
       }));
       
       // Update status info periodically
@@ -291,6 +304,74 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [isRunning, config.torEnabled, config.i2pEnabled]);
 
+  // Simulate Tor proxy logs when running
+  useEffect(() => {
+    if (!torProxyRunning) return;
+    
+    const torLogInterval = setInterval(() => {
+      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      setLogs(prev => ({
+        ...prev,
+        console: prev.console,
+        logFile: prev.logFile,
+        torProxy: [...prev.torProxy, `[${timestamp}] [info] Bootstrapping Tor network: ${Math.min(100, prev.torProxy.length)}%`].slice(-100),
+        i2pProxy: prev.i2pProxy,
+      }));
+      
+      // Generate onion address after some time
+      if (logs.torProxy.length > 15 && !config.torOnionAddress) {
+        setConfig(prev => ({
+          ...prev,
+          torOnionAddress: `${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}.onion`
+        }));
+        
+        setLogs(prev => ({
+          ...prev,
+          console: prev.console,
+          logFile: prev.logFile,
+          torProxy: [...prev.torProxy, `[${timestamp}] [notice] Onion address generated: ${config.torOnionAddress}`].slice(-100),
+          i2pProxy: prev.i2pProxy,
+        }));
+      }
+    }, 1500);
+    
+    return () => clearInterval(torLogInterval);
+  }, [torProxyRunning, logs.torProxy.length, config.torOnionAddress]);
+
+  // Simulate I2P proxy logs when running
+  useEffect(() => {
+    if (!i2pProxyRunning) return;
+    
+    const i2pLogInterval = setInterval(() => {
+      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      setLogs(prev => ({
+        ...prev,
+        console: prev.console,
+        logFile: prev.logFile,
+        torProxy: prev.torProxy,
+        i2pProxy: [...prev.i2pProxy, `[${timestamp}] * Starting I2P router: initialization ${Math.min(100, prev.i2pProxy.length)}%`].slice(-100),
+      }));
+      
+      // Generate I2P address after some time
+      if (logs.i2pProxy.length > 15 && !config.i2pAddress) {
+        setConfig(prev => ({
+          ...prev,
+          i2pAddress: `${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}.b32.i2p`
+        }));
+        
+        setLogs(prev => ({
+          ...prev,
+          console: prev.console,
+          logFile: prev.logFile,
+          torProxy: prev.torProxy,
+          i2pProxy: [...prev.i2pProxy, `[${timestamp}] * I2P address generated: ${config.i2pAddress}`].slice(-100),
+        }));
+      }
+    }, 1500);
+    
+    return () => clearInterval(i2pLogInterval);
+  }, [i2pProxyRunning, logs.i2pProxy.length, config.i2pAddress]);
+
   const startNode = () => {
     if (isRunning) return;
     
@@ -301,6 +382,8 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setLogs({
         console: ['[INFO] Starting Monero daemon...', '[INFO] Using config file...'],
         logFile: ['[INFO] Monero daemon starting...', '[INFO] Loading blockchain...'],
+        torProxy: [],
+        i2pProxy: [],
       });
       setStatusInfo({
         ...defaultStatus,
@@ -327,6 +410,8 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setLogs(prev => ({
       console: [...prev.console, '[INFO] Stopping Monero daemon...', '[INFO] Daemon stopped successfully.'],
       logFile: [...prev.logFile, '[INFO] Shutting down...', '[INFO] Database saved.'],
+      torProxy: prev.torProxy,
+      i2pProxy: prev.i2pProxy,
     }));
     
     toast({
@@ -535,6 +620,100 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const startTorProxy = () => {
+    if (torProxyRunning) return;
+    
+    try {
+      // This would actually launch the Tor process
+      // For now, we'll just simulate startup
+      setTorProxyRunning(true);
+      setLogs(prev => ({
+        ...prev,
+        console: prev.console,
+        logFile: prev.logFile,
+        torProxy: ['[INFO] Starting Tor...', '[INFO] Using configuration file...', '[INFO] Bootstrapping Tor network...'],
+        i2pProxy: prev.i2pProxy,
+      }));
+      
+      toast({
+        title: "Tor Started",
+        description: "Tor proxy is now running.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error Starting Tor",
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  const stopTorProxy = () => {
+    if (!torProxyRunning) return;
+    
+    // This would actually stop the Tor process
+    setTorProxyRunning(false);
+    setLogs(prev => ({
+      ...prev,
+      console: prev.console,
+      logFile: prev.logFile,
+      torProxy: [...prev.torProxy, '[INFO] Stopping Tor...', '[INFO] Tor stopped successfully.'],
+      i2pProxy: prev.i2pProxy,
+    }));
+    
+    toast({
+      title: "Tor Stopped",
+      description: "Tor proxy has been stopped successfully.",
+    });
+  };
+
+  const startI2PProxy = () => {
+    if (i2pProxyRunning) return;
+    
+    try {
+      // This would actually launch the I2P process
+      // For now, we'll just simulate startup
+      setI2pProxyRunning(true);
+      setLogs(prev => ({
+        ...prev,
+        console: prev.console,
+        logFile: prev.logFile,
+        torProxy: prev.torProxy,
+        i2pProxy: ['[INFO] Starting I2P router...', '[INFO] Using configuration file...', '[INFO] Initializing I2P network...'],
+      }));
+      
+      toast({
+        title: "I2P Started",
+        description: "I2P router is now running.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error Starting I2P",
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  const stopI2PProxy = () => {
+    if (!i2pProxyRunning) return;
+    
+    // This would actually stop the I2P process
+    setI2pProxyRunning(false);
+    setLogs(prev => ({
+      ...prev,
+      console: prev.console,
+      logFile: prev.logFile,
+      torProxy: prev.torProxy,
+      i2pProxy: [...prev.i2pProxy, '[INFO] Stopping I2P router...', '[INFO] I2P router stopped successfully.'],
+    }));
+    
+    toast({
+      title: "I2P Stopped",
+      description: "I2P router has been stopped successfully.",
+    });
+  };
+
   return (
     <MoneroContext.Provider
       value={{
@@ -552,7 +731,13 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         testConnectivity,
         connectionTestResults,
         downloadLatestDaemon,
-        isDownloading
+        isDownloading,
+        torProxyRunning,
+        i2pProxyRunning,
+        startTorProxy,
+        stopTorProxy,
+        startI2PProxy,
+        stopI2PProxy
       }}
     >
       {children}
