@@ -54,7 +54,17 @@ const ProxyTab: React.FC = () => {
         const result = await createDirectoryStructure('./');
         if (result.success) {
           setDirectoryStructureCreated(true);
-          console.log('Directory structure created:', result.message);
+          console.log('Directory structure created or simulated:', result.message);
+          
+          // Display directory structure in browser environment
+          if (result.message.includes("would be created")) {
+            // In browser environment, show toast with directory structure info
+            toast({
+              title: "Directory Structure Overview",
+              description: "Directory structure details are displayed in the console.",
+            });
+            console.info("Expected directory structure:\n" + result.message);
+          }
         } else {
           console.error('Failed to create directory structure:', result.message);
           toast({

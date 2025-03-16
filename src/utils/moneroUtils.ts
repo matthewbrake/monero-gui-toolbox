@@ -1,18 +1,19 @@
 
 // We need to handle both environments - web and electron
-let app, dialog;
+let app, dialog, fs, path;
 try {
   const remote = require('@electron/remote');
   app = remote.app;
   dialog = remote.dialog;
+  fs = require('fs');
+  path = require('path');
 } catch (error) {
   console.log('Not running in Electron environment');
   app = null;
   dialog = null;
+  fs = null;
+  path = null;
 }
-
-import fs from 'fs';
-import path from 'path';
 
 /**
  * Generates the command line arguments for monerod based on the provided configuration.
@@ -138,10 +139,51 @@ export const getFilePath = async (): Promise<string | undefined> => {
 
 /**
  * Create default directory structure for Monero, Tor, and I2P
+ * This function only works in Electron environment
  * @param baseDir - Base directory where all subdirectories will be created
  */
 export const createDirectoryStructure = async (baseDir: string = './'): Promise<{ success: boolean, message: string }> => {
   try {
+    // For browser environment, we'll just simulate success
+    if (!fs || !path) {
+      console.log('Directory structure creation is only available in Electron environment');
+      
+      // Return a descriptive message about the expected directory structure
+      return {
+        success: true,
+        message: `Directory structure would be created in Electron:
+        
+Monero:
+  ./monero/
+    bin/
+      win/     - Windows binaries (monerod.exe, monero-wallet-rpc.exe)
+      linux/   - Linux binaries (monerod, monero-wallet-rpc)
+    blockchain/ - Blockchain data files
+    configs/    - Configuration files
+    logs/       - Log files
+
+Tor:
+  ./tor/
+    bin/
+      win/     - Windows Tor binaries (tor.exe)
+      linux/   - Linux Tor binaries (tor)
+    data/      - Tor data directory
+    hidden_service/ - Onion services directory
+    config/    - Contains torrc configuration
+    logs/      - Log files
+
+I2P:
+  ./i2p/
+    bin/
+      win/     - Windows I2P binaries (i2pd.exe)
+      linux/   - Linux I2P binaries (i2pd)
+    data/      - I2P data directory
+    config/    - Contains i2pd.conf and tunnels.conf
+    logs/      - Log files
+`
+      };
+    }
+
     // Define directory structures
     const directories = {
       // Monero directories
