@@ -1,7 +1,8 @@
 
+// MoneroConfig interface defines all the configuration parameters
 export interface MoneroConfig {
   // General/Basic settings
-  moneroPath: string;  // Path to monerod executable
+  moneroPath: string;
   dataDir: string;
   logLevel: number;
   noConsoleLog: boolean;
@@ -32,7 +33,7 @@ export interface MoneroConfig {
   restrictRpc: boolean;
   rpcLogin: string;
   rpcSsl: boolean;
-  rpcSslCert: string; 
+  rpcSslCert: string;
   rpcSslKey: string;
   confirmExternalBind: boolean;
   rpcPaymentAllowFreeLoopback: boolean;
@@ -57,10 +58,10 @@ export interface MoneroConfig {
   
   // Tor settings
   torEnabled: boolean;
-  torPath: string;          // Path to tor executable
-  torrcPath: string;        // Path to torrc config file
-  torDataPath: string;      // Path to tor data directory
-  torLogPath: string;       // Path to tor log file
+  torPath: string;
+  torrcPath: string;
+  torDataPath: string;
+  torLogPath: string;
   torSocksPort: string;
   txProxy: string;
   torOnly: boolean;
@@ -70,11 +71,11 @@ export interface MoneroConfig {
   
   // I2P settings
   i2pEnabled: boolean;
-  i2pPath: string;          // Path to i2p executable
-  i2pDataPath: string;      // Path to i2p data directory
-  i2pConfigPath: string;    // Path to i2pd.conf file
-  i2pTunnelsPath: string;   // Path to tunnels.conf file
-  i2pLogPath: string;       // Path to i2p log file
+  i2pPath: string;
+  i2pDataPath: string;
+  i2pConfigPath: string;
+  i2pTunnelsPath: string;
+  i2pLogPath: string;
   i2pSamPort: string;
   i2pProxy: string;
   anonymousInboundI2p: string;
@@ -89,22 +90,74 @@ export interface MoneroConfig {
   
   // Miscellaneous
   maxConcurrency: string;
-
-  refreshLogs?: () => void;
 }
 
-export interface ConnectionTestResult {
-  torConnectivity: { tested: boolean, success?: boolean, output?: string };
-  i2pConnectivity: { tested: boolean, success?: boolean, output?: string };
-  rpcConnectivity: { tested: boolean, success?: boolean, output?: string };
-  daemonVersion: { checked: boolean, current?: string, latest?: string, needsUpdate?: boolean };
-  portStatus: {
-    tor: { checked: boolean, open?: boolean, port?: string },
-    i2p: { checked: boolean, open?: boolean, port?: string },
-    monero: { checked: boolean, open?: boolean, port?: string }
+// Interfaces for connection testing
+export interface PortStatus {
+  checked: boolean;
+  open?: boolean;
+  port?: string;
+}
+
+export interface TorConnectivity {
+  tested: boolean;
+  success?: boolean;
+  output?: string;
+  additionalTests?: {
+    torProject?: {
+      success: boolean;
+      output: string;
+    };
   };
 }
 
+export interface I2pConnectivity {
+  tested: boolean;
+  success?: boolean;
+  output?: string;
+  additionalTests?: {
+    i2pSite?: {
+      success: boolean;
+      output: string;
+    };
+  };
+}
+
+export interface RpcConnectivity {
+  tested: boolean;
+  success?: boolean;
+  output?: string;
+}
+
+export interface DaemonVersion {
+  checked: boolean;
+  current?: string;
+  latest?: string;
+  needsUpdate?: boolean;
+}
+
+export interface ConnectionTestResult {
+  torConnectivity: TorConnectivity;
+  i2pConnectivity: I2pConnectivity;
+  rpcConnectivity: RpcConnectivity;
+  daemonVersion: DaemonVersion;
+  portStatus: {
+    tor: PortStatus;
+    i2p: PortStatus;
+    monero: PortStatus;
+  };
+}
+
+// Interface for status information
+export interface StatusInfo {
+  blockHeight: number;
+  networkHashrate: string;
+  connections: number;
+  syncStatus: number;
+  version: string;
+}
+
+// Interface for log data
 export interface LogData {
   console: string[];
   logFile: string[];
@@ -112,14 +165,7 @@ export interface LogData {
   i2pProxy: string[];
 }
 
-export interface StatusInfo {
-  blockHeight: number;
-  networkHashrate: string;
-  connections: number;
-  syncStatus: number;
-  version?: string;
-}
-
+// Context interface that combines all of our state and functions
 export interface MoneroContextType {
   config: MoneroConfig;
   setConfig: React.Dispatch<React.SetStateAction<MoneroConfig>>;
@@ -134,7 +180,7 @@ export interface MoneroContextType {
   statusInfo: StatusInfo;
   testConnectivity: () => Promise<void>;
   connectionTestResults: ConnectionTestResult;
-  downloadLatestDaemon: (platform: 'windows' | 'linux') => Promise<void>;
+  downloadLatestDaemon: () => void;
   isDownloading: boolean;
   torProxyRunning: boolean;
   i2pProxyRunning: boolean;
@@ -147,4 +193,8 @@ export interface MoneroContextType {
   testPaths: () => Promise<void>;
   checkPortStatus: (type: 'tor' | 'i2p' | 'monero') => Promise<void>;
   refreshLogs: () => void;
+  testRpcCommand: (proxyType: 'clearnet' | 'tor' | 'i2p') => Promise<{
+    success: boolean;
+    output: string;
+  }>;
 }

@@ -1,22 +1,17 @@
 
 # Default I2P tunnels configuration for Monero Suite
 
-[monero-rpc]
-type = http
-host = 127.0.0.1
-port = 18081
-keys = monero-rpc.dat
-inbound.length = 3
-outbound.length = 3
-inbound.quantity = 5
-outbound.quantity = 5
-
-[monero-p2p]
+[monero-node]
 type = server
 host = 127.0.0.1
-port = 18080
-keys = monero-p2p.dat
-inbound.length = 3
-outbound.length = 3
-inbound.quantity = 5
-outbound.quantity = 5
+# Anonymous inbound port
+port = 18085
+inport = 0
+keys = monero-mainnet.dat
+
+[monero-rpc]
+type = server
+host = 127.0.0.1
+# Restricted RPC port
+port = 18089
+keys = monero-mainnet.dat

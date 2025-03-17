@@ -94,8 +94,24 @@ export const defaultConfig: MoneroConfig = {
 };
 
 export const defaultConnectionTestResults: ConnectionTestResult = {
-  torConnectivity: { tested: false },
-  i2pConnectivity: { tested: false },
+  torConnectivity: { 
+    tested: false,
+    additionalTests: {
+      torProject: {
+        success: false,
+        output: ""
+      }
+    }
+  },
+  i2pConnectivity: { 
+    tested: false,
+    additionalTests: {
+      i2pSite: {
+        success: false,
+        output: ""
+      }
+    }
+  },
   rpcConnectivity: { tested: false },
   daemonVersion: { checked: false },
   portStatus: {

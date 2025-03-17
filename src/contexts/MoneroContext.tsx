@@ -57,7 +57,8 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { 
     connectionTestResults, 
     checkPortStatus, 
-    testConnectivity 
+    testConnectivity,
+    testRpcCommand
   } = useConnectivityTesting(config, isRunning);
 
   return (
@@ -88,7 +89,8 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setShowBinaryConfig,
         testPaths,
         checkPortStatus,
-        refreshLogs
+        refreshLogs,
+        testRpcCommand
       }}
     >
       {children}
