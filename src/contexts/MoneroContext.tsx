@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 
@@ -447,7 +446,7 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const checkPortStatus = async (type: 'tor' | 'i2p' | 'monero') => {
+  const checkPortStatus = async (type: 'tor' | 'i2p' | 'monero'): Promise<void> => {
     try {
       // In a real app, this would use port scanning techniques
       // For this demo, we'll simulate port checking
@@ -479,11 +478,8 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
         }
       }));
-      
-      return portOpen;
     } catch (error) {
       console.error(`Error checking ${type} port:`, error);
-      return false;
     }
   };
 
