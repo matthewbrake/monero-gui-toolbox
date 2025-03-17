@@ -3,10 +3,11 @@ import React from 'react';
 import { useMonero } from '@/contexts/MoneroContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Play, Square, Save, Upload, Network, Shield } from 'lucide-react';
+import { Play, Square, Save, Upload, Network, Shield, HardDrive } from 'lucide-react';
 import ConfigTab from './ConfigTab';
 import StatusTab from './StatusTab';
 import LogsTab from './LogsTab';
+import MoneroBinaryConfig from './MoneroBinaryConfig';
 
 const Layout: React.FC = () => {
   const { 
@@ -22,7 +23,9 @@ const Layout: React.FC = () => {
     startTorProxy,
     stopTorProxy,
     startI2PProxy,
-    stopI2PProxy
+    stopI2PProxy,
+    showBinaryConfig,
+    setShowBinaryConfig
   } = useMonero();
 
   return (
@@ -33,6 +36,15 @@ const Layout: React.FC = () => {
           <p className="text-muted-foreground">Portable Daemon Management Tool</p>
         </div>
         <div className="flex space-x-3">
+          <Button
+            onClick={() => setShowBinaryConfig(true)}
+            variant="outline"
+            className="flex items-center space-x-2 hover-glow"
+          >
+            <HardDrive className="h-4 w-4" />
+            <span>Binary Paths</span>
+          </Button>
+          
           <Button
             onClick={saveConfig}
             variant="outline"
@@ -142,6 +154,9 @@ const Layout: React.FC = () => {
       <footer className="mt-6 text-center text-muted-foreground text-sm">
         <p>Monero Suite GUI - Portable Edition</p>
       </footer>
+
+      {/* Modal for configuring binary paths */}
+      {showBinaryConfig && <MoneroBinaryConfig />}
     </div>
   );
 };

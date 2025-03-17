@@ -1,8 +1,10 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 
 export interface MoneroConfig {
   // General/Basic settings
+  moneroPath: string;  // Path to monerod executable
   dataDir: string;
   logLevel: number;
   noConsoleLog: boolean;
@@ -58,9 +60,10 @@ export interface MoneroConfig {
   
   // Tor settings
   torEnabled: boolean;
-  torPath: string;
-  torrcPath: string;
-  torDataPath: string;
+  torPath: string;          // Path to tor executable
+  torrcPath: string;        // Path to torrc config file
+  torDataPath: string;      // Path to tor data directory
+  torLogPath: string;       // Path to tor log file
   torSocksPort: string;
   txProxy: string;
   torOnly: boolean;
@@ -70,8 +73,11 @@ export interface MoneroConfig {
   
   // I2P settings
   i2pEnabled: boolean;
-  i2pPath: string;
-  i2pDataPath: string;
+  i2pPath: string;          // Path to i2p executable
+  i2pDataPath: string;      // Path to i2p data directory
+  i2pConfigPath: string;    // Path to i2pd.conf file
+  i2pTunnelsPath: string;   // Path to tunnels.conf file
+  i2pLogPath: string;       // Path to i2p log file
   i2pSamPort: string;
   i2pProxy: string;
   anonymousInboundI2p: string;
@@ -93,6 +99,11 @@ export interface ConnectionTestResult {
   i2pConnectivity: { tested: boolean, success?: boolean, output?: string };
   rpcConnectivity: { tested: boolean, success?: boolean, output?: string };
   daemonVersion: { checked: boolean, current?: string, latest?: string, needsUpdate?: boolean };
+  portStatus: {
+    tor: { checked: boolean, open?: boolean, port?: string },
+    i2p: { checked: boolean, open?: boolean, port?: string },
+    monero: { checked: boolean, open?: boolean, port?: string }
+  };
 }
 
 export interface LogData {
@@ -130,10 +141,15 @@ export interface MoneroContextType {
   stopTorProxy: () => void;
   startI2PProxy: () => void;
   stopI2PProxy: () => void;
+  showBinaryConfig: boolean;
+  setShowBinaryConfig: React.Dispatch<React.SetStateAction<boolean>>;
+  testPaths: () => Promise<void>;
+  checkPortStatus: (type: 'tor' | 'i2p' | 'monero') => Promise<void>;
 }
 
 const defaultConfig: MoneroConfig = {
   // General/Basic settings
+  moneroPath: './bin/monerod',
   dataDir: './blockchain',
   logLevel: 0,
   noConsoleLog: false,
@@ -192,6 +208,7 @@ const defaultConfig: MoneroConfig = {
   torPath: './tor/tor.exe',
   torrcPath: './tor/torrc',
   torDataPath: './tor/data',
+  torLogPath: './tor/logs/tor.log',
   torSocksPort: '9050',
   txProxy: 'tor,127.0.0.1:9050,10',
   torOnly: false,
@@ -203,6 +220,9 @@ const defaultConfig: MoneroConfig = {
   i2pEnabled: false,
   i2pPath: './i2p/i2p.exe',
   i2pDataPath: './i2p/data',
+  i2pConfigPath: './i2p/config/i2pd.conf',
+  i2pTunnelsPath: './i2p/config/tunnels.conf',
+  i2pLogPath: './i2p/logs/i2pd.log',
   i2pSamPort: '7656',
   i2pProxy: 'i2p,127.0.0.1:4447',
   anonymousInboundI2p: '',
@@ -224,6 +244,11 @@ const defaultConnectionTestResults: ConnectionTestResult = {
   i2pConnectivity: { tested: false },
   rpcConnectivity: { tested: false },
   daemonVersion: { checked: false },
+  portStatus: {
+    tor: { checked: false },
+    i2p: { checked: false },
+    monero: { checked: false }
+  }
 };
 
 const defaultStatus = {
@@ -253,6 +278,7 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isDownloading, setIsDownloading] = useState(false);
   const [torProxyRunning, setTorProxyRunning] = useState(false);
   const [i2pProxyRunning, setI2pProxyRunning] = useState(false);
+  const [showBinaryConfig, setShowBinaryConfig] = useState(false);
 
   // Simulating logs updating when daemon is running
   useEffect(() => {
@@ -372,6 +398,95 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => clearInterval(i2pLogInterval);
   }, [i2pProxyRunning, logs.i2pProxy.length, config.i2pAddress]);
 
+  // Test if binary paths exist and are executable
+  const testPaths = async () => {
+    try {
+      // In a real app, this would check if files exist and are executable
+      // For this demo, we'll just simulate a check
+      
+      const pathsToCheck = [
+        { name: 'Monero daemon', path: config.moneroPath },
+        { name: 'Tor executable', path: config.torPath, enabled: config.torEnabled },
+        { name: 'I2P executable', path: config.i2pPath, enabled: config.i2pEnabled }
+      ];
+      
+      let allValid = true;
+      let invalidPaths: string[] = [];
+      
+      // Simulate path checking
+      pathsToCheck.forEach(item => {
+        if (item.enabled === false) return; // Skip if not enabled
+        
+        const exists = item.path && item.path.length > 0;
+        const isExecutable = item.path.endsWith('.exe') || !item.path.includes('.');
+        
+        if (!exists || !isExecutable) {
+          allValid = false;
+          invalidPaths.push(item.name);
+        }
+      });
+      
+      if (allValid) {
+        toast({
+          title: "Path Validation Successful",
+          description: "All binary paths are valid.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Invalid Paths Detected",
+          description: `The following paths may be invalid: ${invalidPaths.join(', ')}`,
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Path Validation Error",
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  const checkPortStatus = async (type: 'tor' | 'i2p' | 'monero') => {
+    try {
+      // In a real app, this would use port scanning techniques
+      // For this demo, we'll simulate port checking
+      
+      let port = '';
+      switch (type) {
+        case 'tor':
+          port = config.torSocksPort;
+          break;
+        case 'i2p':
+          port = config.i2pSamPort;
+          break;
+        case 'monero':
+          port = config.rpcBindPort;
+          break;
+      }
+      
+      // Simulate port checking (in a real app, this would use something like netstat)
+      const portOpen = Math.random() > 0.2; // 80% chance port is open for demo
+      
+      setConnectionTestResults(prev => ({
+        ...prev,
+        portStatus: {
+          ...prev.portStatus,
+          [type]: { 
+            checked: true, 
+            open: portOpen,
+            port
+          }
+        }
+      }));
+      
+      return portOpen;
+    } catch (error) {
+      console.error(`Error checking ${type} port:`, error);
+      return false;
+    }
+  };
+
   const startNode = () => {
     if (isRunning) return;
     
@@ -380,7 +495,7 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // For now, we'll just simulate startup
       setIsRunning(true);
       setLogs({
-        console: ['[INFO] Starting Monero daemon...', '[INFO] Using config file...'],
+        console: ['[INFO] Starting Monero daemon...', `[INFO] Using binary: ${config.moneroPath}`, '[INFO] Using config file...'],
         logFile: ['[INFO] Monero daemon starting...', '[INFO] Loading blockchain...'],
         torProxy: [],
         i2pProxy: [],
@@ -459,15 +574,17 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const testConnectivity = async () => {
-    // Test RPC connectivity
-    const rpcUrl = `http://${config.rpcBindIp}:${config.rpcBindPort}/json_rpc`;
-    
     // Reset all test results
     setConnectionTestResults({
       torConnectivity: { tested: false },
       i2pConnectivity: { tested: false },
       rpcConnectivity: { tested: false },
-      daemonVersion: { checked: false }
+      daemonVersion: { checked: false },
+      portStatus: {
+        tor: { checked: false },
+        i2p: { checked: false },
+        monero: { checked: false }
+      }
     });
     
     // Only test if daemon is running
@@ -485,10 +602,16 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       description: "Running connectivity tests...",
     });
     
+    // Check port status
+    await checkPortStatus('monero');
+    if (config.torEnabled) await checkPortStatus('tor');
+    if (config.i2pEnabled) await checkPortStatus('i2p');
+    
     // Test RPC if enabled
     if (config.rpcEnabled) {
       try {
         const { testRpcConnectivity } = await import('@/utils/moneroUtils');
+        const rpcUrl = `http://${config.rpcBindIp}:${config.rpcBindPort}/json_rpc`;
         const result = await testRpcConnectivity(rpcUrl);
         setConnectionTestResults(prev => ({
           ...prev,
@@ -624,14 +747,21 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (torProxyRunning) return;
     
     try {
-      // This would actually launch the Tor process
+      // This would actually launch the Tor process using the command:
+      // config.torPath --config config.torrcPath --DataDirectory config.torDataPath --Log "notice file config.torLogPath"
+      
       // For now, we'll just simulate startup
       setTorProxyRunning(true);
       setLogs(prev => ({
         ...prev,
         console: prev.console,
         logFile: prev.logFile,
-        torProxy: ['[INFO] Starting Tor...', '[INFO] Using configuration file...', '[INFO] Bootstrapping Tor network...'],
+        torProxy: [
+          '[INFO] Starting Tor...',
+          `[INFO] Command: ${config.torPath} --config ${config.torrcPath} --DataDirectory ${config.torDataPath} --Log "notice file ${config.torLogPath}"`,
+          '[INFO] Using configuration file...',
+          '[INFO] Bootstrapping Tor network...'
+        ],
         i2pProxy: prev.i2pProxy,
       }));
       
@@ -671,7 +801,9 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (i2pProxyRunning) return;
     
     try {
-      // This would actually launch the I2P process
+      // This would actually launch the I2P process using the command:
+      // config.i2pPath --datadir=config.i2pDataPath --conf=config.i2pConfigPath --tunconf=config.i2pTunnelsPath --log=config.i2pLogPath
+      
       // For now, we'll just simulate startup
       setI2pProxyRunning(true);
       setLogs(prev => ({
@@ -679,7 +811,12 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         console: prev.console,
         logFile: prev.logFile,
         torProxy: prev.torProxy,
-        i2pProxy: ['[INFO] Starting I2P router...', '[INFO] Using configuration file...', '[INFO] Initializing I2P network...'],
+        i2pProxy: [
+          '[INFO] Starting I2P router...',
+          `[INFO] Command: ${config.i2pPath} --datadir=${config.i2pDataPath} --conf=${config.i2pConfigPath} --tunconf=${config.i2pTunnelsPath} --log=${config.i2pLogPath}`,
+          '[INFO] Using configuration file...',
+          '[INFO] Initializing I2P network...'
+        ],
       }));
       
       toast({
@@ -737,7 +874,11 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         startTorProxy,
         stopTorProxy,
         startI2PProxy,
-        stopI2PProxy
+        stopI2PProxy,
+        showBinaryConfig,
+        setShowBinaryConfig,
+        testPaths,
+        checkPortStatus
       }}
     >
       {children}
