@@ -10,3 +10,13 @@ inbound.length = 3
 outbound.length = 3
 inbound.quantity = 5
 outbound.quantity = 5
+
+[monero-p2p]
+type = server
+host = 127.0.0.1
+port = 18080
+keys = monero-p2p.dat
+inbound.length = 3
+outbound.length = 3
+inbound.quantity = 5
+outbound.quantity = 5

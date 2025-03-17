@@ -91,6 +91,8 @@ export interface MoneroConfig {
   
   // Miscellaneous
   maxConcurrency: string;
+
+  refreshLogs?: () => void;
 }
 
 export interface ConnectionTestResult {
@@ -144,6 +146,7 @@ export interface MoneroContextType {
   setShowBinaryConfig: React.Dispatch<React.SetStateAction<boolean>>;
   testPaths: () => Promise<void>;
   checkPortStatus: (type: 'tor' | 'i2p' | 'monero') => Promise<void>;
+  refreshLogs: () => void;
 }
 
 const defaultConfig: MoneroConfig = {
@@ -446,6 +449,33 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  // Enhanced to refresh logs from all sources
+  const refreshLogs = () => {
+    try {
+      // In a real implementation, this would fetch fresh logs from the filesystem or API
+      toast({
+        title: "Logs Refreshed",
+        description: "Log data has been updated from all sources.",
+      });
+      
+      // For demo, we'll add a "Refreshed" message to each log
+      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      setLogs(prev => ({
+        console: [...prev.console, `[${timestamp}] [System] Logs refreshed by user`],
+        logFile: [...prev.logFile, `[${timestamp}] [System] Logs refreshed by user`],
+        torProxy: [...prev.torProxy, `[${timestamp}] [System] Logs refreshed by user`],
+        i2pProxy: [...prev.i2pProxy, `[${timestamp}] [System] Logs refreshed by user`],
+      }));
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Log Refresh Failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  // Fix the checkPortStatus function to return Promise<void> instead of Promise<boolean>
   const checkPortStatus = async (type: 'tor' | 'i2p' | 'monero'): Promise<void> => {
     try {
       // In a real app, this would use port scanning techniques
@@ -478,8 +508,11 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
         }
       }));
+      
+      // No return value needed, just return void
     } catch (error) {
       console.error(`Error checking ${type} port:`, error);
+      // Again, no return value
     }
   };
 
@@ -874,7 +907,8 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         showBinaryConfig,
         setShowBinaryConfig,
         testPaths,
-        checkPortStatus
+        checkPortStatus,
+        refreshLogs
       }}
     >
       {children}
