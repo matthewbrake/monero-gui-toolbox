@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useMonero } from '@/contexts/MoneroContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +24,9 @@ const ProxyTab: React.FC = () => {
     stopI2PProxy,
     torProxyRunning,
     i2pProxyRunning,
-    testConnectivity
+    testConnectivity,
+    connectionTestResults,
+    checkPortStatus
   } = useMonero();
   
   const [torLogExpanded, setTorLogExpanded] = useState(false);
@@ -239,6 +242,41 @@ const ProxyTab: React.FC = () => {
                         <p className="text-xs text-muted-foreground">Path to Tor executable (relative or absolute)</p>
                       </div>
 
+                      <div className="space-y-2">
+                        <Label htmlFor="tor-socks-port">SOCKS Port</Label>
+                        <Input
+                          id="tor-socks-port"
+                          value={config.torSocksPort}
+                          onChange={(e) => setConfig(prev => ({ ...prev, torSocksPort: e.target.value }))}
+                          placeholder="9050"
+                          className="flex-1"
+                        />
+                        <p className="text-xs text-muted-foreground">Tor SOCKS port (default: 9050)</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="tor-hidden-port">Hidden Service Port</Label>
+                        <Input
+                          id="tor-hidden-port"
+                          value={(config.anonymousInboundTor || "").split(',')[0]?.split(':')[1] || "18083"}
+                          onChange={(e) => {
+                            // Parse existing anonymousInboundTor to update only the port
+                            const parts = (config.anonymousInboundTor || "").split(',');
+                            if (parts.length >= 1) {
+                              const addrParts = parts[0].split(':');
+                              addrParts[1] = e.target.value;
+                              parts[0] = addrParts.join(':');
+                              setConfig(prev => ({ ...prev, anonymousInboundTor: parts.join(',') }));
+                            } else {
+                              setConfig(prev => ({ ...prev, anonymousInboundTor: `127.0.0.1:${e.target.value}` }));
+                            }
+                          }}
+                          placeholder="18083"
+                          className="flex-1"
+                        />
+                        <p className="text-xs text-muted-foreground">Port to expose via Tor hidden service</p>
+                      </div>
+
                       <div className="flex justify-between items-center">
                         <div className="space-y-1">
                           <h3 className="font-medium">Current Status</h3>
@@ -339,6 +377,26 @@ const ProxyTab: React.FC = () => {
                         </div>
                       </div>
 
+                      <div className="space-y-2">
+                        <Label>Port Status</Label>
+                        <div className="flex space-x-2">
+                          <Button 
+                            onClick={() => checkPortStatus('tor')} 
+                            variant="outline" 
+                            size="sm"
+                            className="flex-1 flex items-center justify-center space-x-2"
+                          >
+                            <Terminal className="h-4 w-4" />
+                            <span>Check Tor Ports</span>
+                          </Button>
+                        </div>
+                        {connectionTestResults.portStatus.tor.checked && (
+                          <div className={`text-xs p-2 rounded-md ${connectionTestResults.portStatus.tor.open ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
+                            Port {connectionTestResults.portStatus.tor.port} is {connectionTestResults.portStatus.tor.open ? 'open' : 'closed'}
+                          </div>
+                        )}
+                      </div>
+
                       <div className="space-y-2 pt-3 border-t">
                         <Label>Test RPC over Tor</Label>
                         <div className="flex space-x-2">
@@ -414,6 +472,41 @@ const ProxyTab: React.FC = () => {
                           </Button>
                         </div>
                         <p className="text-xs text-muted-foreground">Path to I2P executable (relative or absolute)</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="i2p-sam-port">SAM Port</Label>
+                        <Input
+                          id="i2p-sam-port"
+                          value={config.i2pSamPort}
+                          onChange={(e) => setConfig(prev => ({ ...prev, i2pSamPort: e.target.value }))}
+                          placeholder="7656"
+                          className="flex-1"
+                        />
+                        <p className="text-xs text-muted-foreground">I2P SAM port (default: 7656)</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="i2p-inbound-port">I2P Inbound Port</Label>
+                        <Input
+                          id="i2p-inbound-port"
+                          value={(config.anonymousInboundI2p || "").split(',')[0]?.split(':')[1] || "18084"}
+                          onChange={(e) => {
+                            // Parse existing anonymousInboundI2p to update only the port
+                            const parts = (config.anonymousInboundI2p || "").split(',');
+                            if (parts.length >= 1) {
+                              const addrParts = parts[0].split(':');
+                              addrParts[1] = e.target.value;
+                              parts[0] = addrParts.join(':');
+                              setConfig(prev => ({ ...prev, anonymousInboundI2p: parts.join(',') }));
+                            } else {
+                              setConfig(prev => ({ ...prev, anonymousInboundI2p: `127.0.0.1:${e.target.value}` }));
+                            }
+                          }}
+                          placeholder="18084"
+                          className="flex-1"
+                        />
+                        <p className="text-xs text-muted-foreground">Port to expose via I2P</p>
                       </div>
 
                       <div className="flex justify-between items-center">
@@ -516,6 +609,26 @@ const ProxyTab: React.FC = () => {
                         </div>
                       </div>
 
+                      <div className="space-y-2">
+                        <Label>Port Status</Label>
+                        <div className="flex space-x-2">
+                          <Button 
+                            onClick={() => checkPortStatus('i2p')} 
+                            variant="outline" 
+                            size="sm"
+                            className="flex-1 flex items-center justify-center space-x-2"
+                          >
+                            <Terminal className="h-4 w-4" />
+                            <span>Check I2P Ports</span>
+                          </Button>
+                        </div>
+                        {connectionTestResults.portStatus.i2p.checked && (
+                          <div className={`text-xs p-2 rounded-md ${connectionTestResults.portStatus.i2p.open ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
+                            Port {connectionTestResults.portStatus.i2p.port} is {connectionTestResults.portStatus.i2p.open ? 'open' : 'closed'}
+                          </div>
+                        )}
+                      </div>
+
                       <div className="space-y-2 pt-3 border-t">
                         <Label>Test RPC over I2P</Label>
                         <div className="flex space-x-2">
@@ -590,6 +703,15 @@ const ProxyTab: React.FC = () => {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="font-medium">Directory Structure</span>
+                <Button
+                  onClick={() => checkPortStatus('monero')}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  <Terminal className="h-4 w-4" />
+                  <span>Check Monero Ports</span>
+                </Button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
                 <div>
@@ -603,6 +725,12 @@ const ProxyTab: React.FC = () => {
                   <div className="text-amber-300">./logs/</div>
                 </div>
               </div>
+              
+              {connectionTestResults.portStatus.monero.checked && (
+                <div className={`text-xs p-2 rounded-md ${connectionTestResults.portStatus.monero.open ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
+                  Monero RPC Port {connectionTestResults.portStatus.monero.port} is {connectionTestResults.portStatus.monero.open ? 'open' : 'closed'}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center p-2 bg-black/20 rounded border border-yellow-500/30">

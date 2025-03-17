@@ -1,0 +1,17 @@
+
+# Default Tor configuration for Monero Suite
+SocksPort 9050
+ControlPort 9051
+
+# Data directory
+DataDirectory /app/tor/data
+
+# Log settings
+Log notice file /app/tor/logs/tor.log
+
+# Hidden service settings
+HiddenServiceDir /app/tor/hidden_service
+HiddenServicePort 18081 127.0.0.1:18081
+
+# Exit policy
+ExitPolicy reject *:*

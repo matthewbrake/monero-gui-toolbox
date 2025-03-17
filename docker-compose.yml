@@ -1,0 +1,51 @@
+
+version: '3.8'
+
+services:
+  monero-suite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: monero-suite
+    environment:
+      - NODE_ENV=production
+    ports:
+      # Web UI
+      - "3000:3000"
+      # Monero P2P
+      - "18080:18080"
+      # Monero RPC
+      - "18081:18081"
+      # Monero ZMQ
+      - "18082:18082"
+      # Tor SOCKS proxy
+      - "9050:9050"
+      # Tor control port
+      - "9051:9051"
+      # I2P HTTP proxy
+      - "4444:4444"
+      # I2P SOCKS proxy
+      - "4447:4447"
+      # I2P SAM port
+      - "7656:7656"
+    volumes:
+      # Mount blockchain data to persist between container restarts
+      - ./data/monero/blockchain:/app/monero/blockchain
+      # Mount log directories
+      - ./data/monero/logs:/app/monero/logs
+      - ./data/tor/logs:/app/tor/logs
+      - ./data/i2p/logs:/app/i2p/logs
+      # Mount Tor data directory to persist hidden services
+      - ./data/tor/data:/app/tor/data
+      - ./data/tor/hidden_service:/app/tor/hidden_service
+      # Mount I2P data directory
+      - ./data/i2p/data:/app/i2p/data
+      # Mount configuration files
+      - ./data/monero/configs:/app/monero/configs
+      - ./data/tor/config:/app/tor/config
+      - ./data/i2p/config:/app/i2p/config
+      # Mount binaries (optional, for user-provided binaries)
+      - ./data/monero/bin:/app/monero/bin
+      - ./data/tor/bin:/app/tor/bin
+      - ./data/i2p/bin:/app/i2p/bin
+    restart: unless-stopped

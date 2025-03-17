@@ -1,0 +1,29 @@
+
+# Default I2P configuration for Monero Suite
+
+# Logging
+log = file
+logfile = /app/i2p/logs/i2pd.log
+loglevel = info
+
+# Data directory
+datadir = /app/i2p/data
+
+# Port settings
+sam.enabled = true
+sam.address = 0.0.0.0
+sam.port = 7656
+
+http.enabled = true
+http.address = 0.0.0.0
+http.port = 4444
+
+socksproxy.enabled = true
+socksproxy.address = 0.0.0.0
+socksproxy.port = 4447
+
+# Bandwidth limits
+bandwidth = L
+
+# Tunnel configuration
+tunconf = /app/i2p/config/tunnels.conf

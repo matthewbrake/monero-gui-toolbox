@@ -7,6 +7,7 @@ import { Play, Square, Save, Upload, Network, Shield, HardDrive } from 'lucide-r
 import ConfigTab from './ConfigTab';
 import StatusTab from './StatusTab';
 import LogsTab from './LogsTab';
+import ProxyTab from './ProxyTab';
 import MoneroBinaryConfig from './MoneroBinaryConfig';
 
 const Layout: React.FC = () => {
@@ -132,14 +133,19 @@ const Layout: React.FC = () => {
       </header>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-        <TabsList className="grid grid-cols-3 w-full max-w-md mb-6">
+        <TabsList className="grid grid-cols-4 w-full max-w-xl mb-6">
           <TabsTrigger value="config">Configuration</TabsTrigger>
+          <TabsTrigger value="proxies">Anonymity</TabsTrigger>
           <TabsTrigger value="status">Status</TabsTrigger>
           <TabsTrigger value="logs">Logs</TabsTrigger>
         </TabsList>
 
         <TabsContent value="config" className="tab-transition tab-active">
           <ConfigTab />
+        </TabsContent>
+
+        <TabsContent value="proxies" className="tab-transition tab-active">
+          <ProxyTab />
         </TabsContent>
 
         <TabsContent value="status" className="tab-transition tab-active">
