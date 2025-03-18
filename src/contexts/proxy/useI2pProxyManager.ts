@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { MoneroConfig } from '../../types/monero';
 
@@ -10,37 +10,64 @@ export const useI2pProxyManager = (
 ) => {
   const [i2pProxyRunning, setI2pProxyRunning] = useState(false);
 
+  // Simulate I2P proxy logs when running
+  useEffect(() => {
+    if (!i2pProxyRunning) return;
+    
+    const i2pLogInterval = setInterval(() => {
+      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      
+      appendToI2pProxyLog([
+        `[${timestamp}] * Starting I2P router: initialization ${Math.min(100, Math.floor(Math.random() * 100))}%`
+      ]);
+      
+    }, 1500);
+    
+    // Generate I2P address after some time
+    if (i2pProxyRunning && !config.i2pAddress) {
+      setTimeout(() => {
+        const generatedAddress = `${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}.b32.i2p`;
+        
+        setConfig(prev => ({
+          ...prev,
+          i2pAddress: generatedAddress
+        }));
+        
+        const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+        appendToI2pProxyLog([
+          `[${timestamp}] * I2P address generated: ${generatedAddress}`
+        ]);
+      }, 7000);
+    }
+    
+    return () => clearInterval(i2pLogInterval);
+  }, [i2pProxyRunning, config.i2pAddress, appendToI2pProxyLog, setConfig]);
+
   const startI2PProxy = () => {
     if (i2pProxyRunning) return;
     
     try {
-      // This would actually start the I2P proxy process
-      // For now, we'll just simulate it
+      // This would actually launch the I2P process using the command:
+      // config.i2pPath --datadir=config.i2pDataPath --conf=config.i2pConfigPath --tunconf=config.i2pTunnelsPath --log=config.i2pLogPath
+      
+      // For now, we'll just simulate startup
       setI2pProxyRunning(true);
       
-      const timestamp = new Date().toISOString();
       appendToI2pProxyLog([
-        `[${timestamp}] Starting I2P proxy...`,
-        `[${timestamp}] I2P is starting...`,
-        `[${timestamp}] Building tunnels...`,
-        `[${timestamp}] I2P proxy started successfully.`
+        '[INFO] Starting I2P router...',
+        `[INFO] Command: ${config.i2pPath} --datadir=${config.i2pDataPath} --conf=${config.i2pConfigPath} --tunconf=${config.i2pTunnelsPath} --log=${config.i2pLogPath}`,
+        '[INFO] Using configuration file...',
+        '[INFO] Initializing I2P network...'
       ]);
       
-      // After successfully starting I2P, we would get a b32 address
-      // For demonstration, we'll set a simulated one
-      setConfig(prev => ({
-        ...prev,
-        i2pAddress: `${Math.random().toString(36).substring(2, 15)}.b32.i2p:80`
-      }));
-      
       toast({
-        title: "I2P Proxy Started",
-        description: "The I2P proxy is now running.",
+        title: "I2P Started",
+        description: "I2P router is now running.",
       });
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error Starting I2P Proxy",
+        title: "Error Starting I2P",
         description: error instanceof Error ? error.message : "Unknown error",
       });
     }
@@ -49,19 +76,17 @@ export const useI2pProxyManager = (
   const stopI2PProxy = () => {
     if (!i2pProxyRunning) return;
     
-    // This would actually stop the I2P proxy process
+    // This would actually stop the I2P process
     setI2pProxyRunning(false);
     
-    const timestamp = new Date().toISOString();
     appendToI2pProxyLog([
-      `[${timestamp}] Stopping I2P proxy...`,
-      `[${timestamp}] Closing tunnels...`,
-      `[${timestamp}] I2P proxy stopped successfully.`
+      '[INFO] Stopping I2P router...', 
+      '[INFO] I2P router stopped successfully.'
     ]);
     
     toast({
-      title: "I2P Proxy Stopped",
-      description: "The I2P proxy has been stopped successfully.",
+      title: "I2P Stopped",
+      description: "I2P router has been stopped successfully.",
     });
   };
 
