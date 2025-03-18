@@ -1,69 +1,127 @@
-# Welcome to your Lovable project
 
-## Project info
+# Monero Suite - Privacy-focused Node Manager
 
-**URL**: https://lovable.dev/projects/82f531ce-1935-4a1a-b873-cc53c984690c
+Monero Suite is a comprehensive web application for managing Monero nodes with integrated Tor and I2P anonymity networks. This project provides an easy-to-use interface for running and monitoring a Monero daemon with privacy enhancements.
 
-## How can I edit this code?
+![Monero Suite](public/og-image.png)
 
-There are several ways of editing your application.
+## Features
 
-**Use Lovable**
+- **Comprehensive Node Management**: Start, stop, and monitor your Monero daemon
+- **Privacy Integration**: Built-in Tor and I2P proxy support
+- **Configuration Flexibility**: Easily adjust all daemon settings through the UI
+- **Docker Support**: Run everything in an isolated container
+- **Logging & Monitoring**: Real-time logs and status information
+- **Connectivity Testing**: Verify your privacy connections are working
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/82f531ce-1935-4a1a-b873-cc53c984690c) and start prompting.
+## Quick Start
 
-Changes made via Lovable will be committed automatically to this repo.
+### Using Docker (Recommended)
 
-**Use your preferred IDE**
+The simplest way to run Monero Suite is using Docker:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/monero-suite.git
+cd monero-suite
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+# Create necessary data directories
+mkdir -p data/monero/blockchain data/monero/logs data/monero/configs
+mkdir -p data/tor/data data/tor/logs data/tor/config
+mkdir -p data/i2p/data data/i2p/logs data/i2p/config
 
-Follow these steps:
+# Start the container
+docker-compose up -d
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# View logs
+docker-compose logs -f
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+The web interface will be available at http://localhost:3000
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Running Locally
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+To run the application locally:
+
+```bash
+# Install dependencies
+npm install
+
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Directory Structure
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+monero-suite/
+├── data/                 # Created when running docker-compose
+│   ├── monero/           # Monero data and configs
+│   ├── tor/              # Tor data and configs
+│   └── i2p/              # I2P data and configs
+├── docker/               # Docker configuration files
+├── src/                  # Source code
+│   ├── components/       # React components
+│   ├── contexts/         # React contexts and hooks
+│   └── utils/            # Utility functions
+└── docker-compose.yml    # Docker Compose configuration
+```
 
-**Use GitHub Codespaces**
+## Configuration
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Binary Paths
 
-## What technologies are used for this project?
+Configure paths to the Monero, Tor, and I2P binaries in the "Binary Paths" dialog:
 
-This project is built with .
+1. Click the "Binary Paths" button in the top menu
+2. Set the paths to your executables
+3. Save the configuration
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+For Docker users, these paths are pre-configured.
 
-## How can I deploy this project?
+### Tor Configuration
 
-Simply open [Lovable](https://lovable.dev/projects/82f531ce-1935-4a1a-b873-cc53c984690c) and click on Share -> Publish.
+The default Tor configuration creates:
+- A SOCKS proxy on port 9050
+- A hidden service for your Monero node
 
-## I want to use a custom domain - is that possible?
+You can adjust these settings in the Anonymity tab.
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+### I2P Configuration
+
+The default I2P configuration:
+- Creates tunnels for anonymous inbound connections
+- Sets up SOCKS proxy on port 4447
+- Enables SAM bridge for application integration
+
+## Development
+
+To contribute to the project:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## Docker Notes
+
+The Docker setup:
+
+1. Automatically downloads Monero binaries if not present
+2. Creates default configuration files
+3. Persists blockchain data and configurations
+4. Exposes all necessary ports
+
+You can provide your own binaries by placing them in:
+- `./data/monero/bin/linux/` - Linux binaries
+- `./data/monero/bin/win/` - Windows binaries
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- The Monero Project
+- The Tor Project
+- The I2P Project

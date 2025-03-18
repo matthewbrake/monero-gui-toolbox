@@ -1,17 +1,31 @@
 
 # Default I2P tunnels configuration for Monero Suite
+# These settings create anonymous inbound connections for Monero daemon
 
+# Anonymous inbound for P2P connections
 [monero-node]
 type = server
 host = 127.0.0.1
-# Anonymous inbound port
+# Anonymous inbound port (must match monerod's anonymous-inbound config)
 port = 18085
+# Use inport=0 to get a random port assigned by I2P
 inport = 0
 keys = monero-mainnet.dat
+# Tunnel settings for better anonymity
+inbound.length = 3
+outbound.length = 3
+inbound.quantity = 5
+outbound.quantity = 5
 
+# Anonymous inbound for RPC connections
 [monero-rpc]
 type = server
 host = 127.0.0.1
-# Restricted RPC port
+# Restricted RPC port (different from standard 18081)
 port = 18089
 keys = monero-mainnet.dat
+# Tunnel settings for better anonymity
+inbound.length = 3
+outbound.length = 3
+inbound.quantity = 5
+outbound.quantity = 5
