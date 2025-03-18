@@ -61,6 +61,12 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     testRpcCommand
   } = useConnectivityTesting(config, isRunning);
 
+  // Create a wrapper function to match the expected type signature
+  const handleDownloadLatestDaemon = () => {
+    // Default to Linux if platform is not specified
+    downloadLatestDaemon('linux');
+  };
+
   return (
     <MoneroContext.Provider
       value={{
@@ -77,7 +83,7 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         statusInfo,
         testConnectivity,
         connectionTestResults,
-        downloadLatestDaemon,
+        downloadLatestDaemon: handleDownloadLatestDaemon,
         isDownloading,
         torProxyRunning,
         i2pProxyRunning,
