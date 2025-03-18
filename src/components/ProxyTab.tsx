@@ -1,349 +1,278 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useMonero } from '@/contexts/MoneroContext';
+import React, { useState, useEffect } from 'react';
+import { useTorProxy } from '@/contexts/proxy/useTorProxyManager';
+import { useI2pProxy } from '@/contexts/proxy/useI2pProxyManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { 
-  AlertCircle, 
-  Check, 
-  Copy, 
-  Eye, 
-  EyeOff, 
-  Folder, 
-  Power, 
-  PowerOff, 
-  RotateCcw, 
-  Terminal,
-  Database,
-  Cpu,
-  Network,
-  Shield,
-  Globe,
-  ExternalLink
-} from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { toast } from '@/hooks/use-toast';
-import { createDirectoryStructure } from '@/utils/moneroUtils';
+import { Badge } from "@/components/ui/badge";
+import { 
+  Power, Shield, Check, X, Loader2, RefreshCw, 
+  Network, Globe, Server, Activity, Link
+} from 'lucide-react';
+import { useLogsManager } from '@/contexts/logs/useLogsManager';
 
 const ProxyTab: React.FC = () => {
   const { 
-    config, 
-    setConfig, 
-    isRunning,
-    logs,
-    startTorProxy,
-    stopTorProxy,
-    startI2PProxy,
-    stopI2PProxy,
-    torProxyRunning,
-    i2pProxyRunning,
-    testConnectivity,
-    connectionTestResults,
-    checkPortStatus,
-    testRpcCommand
-  } = useMonero();
+    torConfig, 
+    setTorConfig, 
+    torStatus, 
+    startTor, 
+    stopTor, 
+    restartTor,
+    getHiddenService,
+    testTorConnection,
+    testSocksConnection
+  } = useTorProxy();
+
+  const {
+    i2pConfig,
+    setI2pConfig,
+    i2pStatus,
+    startI2p,
+    stopI2p,
+    restartI2p,
+    testI2pConnection,
+    testSamConnection,
+    testHttpProxyConnection,
+    testSocksProxyConnection
+  } = useI2pProxy();
+
+  const { addLogEntry } = useLogsManager();
+
+  const [torLoading, setTorLoading] = useState(false);
+  const [i2pLoading, setI2pLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("tor");
   
-  const [torLogExpanded, setTorLogExpanded] = useState(false);
-  const [i2pLogExpanded, setI2pLogExpanded] = useState(false);
-  const [showTorAddress, setShowTorAddress] = useState(false);
-  const [showI2pAddress, setShowI2pAddress] = useState(false);
-  const [directoryStructureCreated, setDirectoryStructureCreated] = useState(false);
-  const [rpcResults, setRpcResults] = useState<{
-    clearnet: { tested: boolean; result?: string; success?: boolean };
-    tor: { tested: boolean; result?: string; success?: boolean };
-    i2p: { tested: boolean; result?: string; success?: boolean };
-  }>({
-    clearnet: { tested: false },
-    tor: { tested: false },
-    i2p: { tested: false }
-  });
-  
-  const [i2pNetworkTests, setI2pNetworkTests] = useState<{
-    socksTest: { tested: boolean; success?: boolean; output?: string };
-    siteTest: { tested: boolean; success?: boolean; output?: string };
-  }>({
-    socksTest: { tested: false },
-    siteTest: { tested: false }
-  });
-  
-  const torLogEndRef = useRef<HTMLDivElement>(null);
-  const i2pLogEndRef = useRef<HTMLDivElement>(null);
+  // Connection test states
+  const [torDirectStatus, setTorDirectStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [torSocksStatus, setTorSocksStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [i2pDirectStatus, setI2pDirectStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [i2pSamStatus, setI2pSamStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [i2pHttpStatus, setI2pHttpStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [i2pSocksStatus, setI2pSocksStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
 
-  // Auto-scroll to the bottom when logs update
+  // Tor hidden service state
+  const [hiddenService, setHiddenService] = useState<string | null>(null);
+  const [refreshingHs, setRefreshingHs] = useState(false);
+
+  // Test Tor connection
+  const handleTestTorConnection = async () => {
+    setTorDirectStatus('testing');
+    try {
+      const result = await testTorConnection();
+      if (result) {
+        setTorDirectStatus('success');
+        addLogEntry('tor', 'info', 'Tor direct connection test successful');
+      } else {
+        setTorDirectStatus('error');
+        addLogEntry('tor', 'error', 'Tor direct connection test failed');
+      }
+    } catch (error) {
+      setTorDirectStatus('error');
+      addLogEntry('tor', 'error', `Tor direct connection test error: ${error}`);
+    }
+  };
+
+  // Test Tor SOCKS connection
+  const handleTestTorSocks = async () => {
+    setTorSocksStatus('testing');
+    try {
+      const result = await testSocksConnection();
+      if (result) {
+        setTorSocksStatus('success');
+        addLogEntry('tor', 'info', 'Tor SOCKS connection test successful');
+      } else {
+        setTorSocksStatus('error');
+        addLogEntry('tor', 'error', 'Tor SOCKS connection test failed');
+      }
+    } catch (error) {
+      setTorSocksStatus('error');
+      addLogEntry('tor', 'error', `Tor SOCKS connection test error: ${error}`);
+    }
+  };
+
+  // Test I2P connection
+  const handleTestI2pConnection = async () => {
+    setI2pDirectStatus('testing');
+    try {
+      const result = await testI2pConnection();
+      if (result) {
+        setI2pDirectStatus('success');
+        addLogEntry('i2p', 'info', 'I2P direct connection test successful');
+      } else {
+        setI2pDirectStatus('error');
+        addLogEntry('i2p', 'error', 'I2P direct connection test failed');
+      }
+    } catch (error) {
+      setI2pDirectStatus('error');
+      addLogEntry('i2p', 'error', `I2P direct connection test error: ${error}`);
+    }
+  };
+
+  // Test I2P SAM connection
+  const handleTestI2pSam = async () => {
+    setI2pSamStatus('testing');
+    try {
+      const result = await testSamConnection();
+      if (result) {
+        setI2pSamStatus('success');
+        addLogEntry('i2p', 'info', 'I2P SAM connection test successful');
+      } else {
+        setI2pSamStatus('error');
+        addLogEntry('i2p', 'error', 'I2P SAM connection test failed');
+      }
+    } catch (error) {
+      setI2pSamStatus('error');
+      addLogEntry('i2p', 'error', `I2P SAM connection test error: ${error}`);
+    }
+  };
+
+  // Test I2P HTTP Proxy connection
+  const handleTestI2pHttpProxy = async () => {
+    setI2pHttpStatus('testing');
+    try {
+      const result = await testHttpProxyConnection();
+      if (result) {
+        setI2pHttpStatus('success');
+        addLogEntry('i2p', 'info', 'I2P HTTP proxy connection test successful');
+      } else {
+        setI2pHttpStatus('error');
+        addLogEntry('i2p', 'error', 'I2P HTTP proxy connection test failed');
+      }
+    } catch (error) {
+      setI2pHttpStatus('error');
+      addLogEntry('i2p', 'error', `I2P HTTP proxy connection test error: ${error}`);
+    }
+  };
+
+  // Test I2P SOCKS Proxy connection
+  const handleTestI2pSocksProxy = async () => {
+    setI2pSocksStatus('testing');
+    try {
+      const result = await testSocksProxyConnection();
+      if (result) {
+        setI2pSocksStatus('success');
+        addLogEntry('i2p', 'info', 'I2P SOCKS proxy connection test successful');
+      } else {
+        setI2pSocksStatus('error');
+        addLogEntry('i2p', 'error', 'I2P SOCKS proxy connection test failed');
+      }
+    } catch (error) {
+      setI2pSocksStatus('error');
+      addLogEntry('i2p', 'error', `I2P SOCKS proxy connection test error: ${error}`);
+    }
+  };
+
+  // Handle Tor start/stop
+  const handleTorToggle = async () => {
+    setTorLoading(true);
+    try {
+      if (torStatus === 'running') {
+        await stopTor();
+        addLogEntry('tor', 'info', 'Tor service stopped');
+      } else {
+        await startTor();
+        addLogEntry('tor', 'info', 'Tor service started');
+      }
+    } catch (error) {
+      console.error('Failed to toggle Tor:', error);
+      addLogEntry('tor', 'error', `Failed to toggle Tor: ${error}`);
+    } finally {
+      setTorLoading(false);
+    }
+  };
+
+  // Handle I2P start/stop
+  const handleI2pToggle = async () => {
+    setI2pLoading(true);
+    try {
+      if (i2pStatus === 'running') {
+        await stopI2p();
+        addLogEntry('i2p', 'info', 'I2P service stopped');
+      } else {
+        await startI2p();
+        addLogEntry('i2p', 'info', 'I2P service started');
+      }
+    } catch (error) {
+      console.error('Failed to toggle I2P:', error);
+      addLogEntry('i2p', 'error', `Failed to toggle I2P: ${error}`);
+    } finally {
+      setI2pLoading(false);
+    }
+  };
+
+  // Get Tor hidden service info
+  const fetchHiddenService = async () => {
+    setRefreshingHs(true);
+    try {
+      const hsAddress = await getHiddenService();
+      setHiddenService(hsAddress);
+      if (hsAddress) {
+        addLogEntry('tor', 'info', `Retrieved hidden service address: ${hsAddress}`);
+      } else {
+        addLogEntry('tor', 'warning', 'No hidden service address available');
+      }
+    } catch (error) {
+      console.error('Failed to get hidden service:', error);
+      addLogEntry('tor', 'error', `Failed to get hidden service: ${error}`);
+    } finally {
+      setRefreshingHs(false);
+    }
+  };
+
+  // Handle TOR config change
+  const handleTorConfigChange = (field: keyof typeof torConfig, value: string | boolean) => {
+    setTorConfig((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Handle I2P config change
+  const handleI2pConfigChange = (field: keyof typeof i2pConfig, value: string | boolean) => {
+    setI2pConfig((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Load initial hidden service data
   useEffect(() => {
-    if (torLogEndRef.current && torLogExpanded) {
-      torLogEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (torStatus === 'running') {
+      fetchHiddenService();
     }
-  }, [logs.torProxy, torLogExpanded]);
+  }, [torStatus]);
 
-  useEffect(() => {
-    if (i2pLogEndRef.current && i2pLogExpanded) {
-      i2pLogEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [logs.i2pProxy, i2pLogExpanded]);
-
-  // Initialize directory structure when component mounts
-  useEffect(() => {
-    const initializeDirectoryStructure = async () => {
-      try {
-        const result = await createDirectoryStructure('./');
-        if (result.success) {
-          setDirectoryStructureCreated(true);
-          console.log('Directory structure created or simulated:', result.message);
-        } else {
-          console.error('Failed to create directory structure:', result.message);
-          toast({
-            variant: "destructive",
-            title: "Directory setup failed",
-            description: result.message,
-          });
-        }
-      } catch (error) {
-        console.error('Error creating directory structure:', error);
-      }
-    };
-
-    if (!directoryStructureCreated) {
-      initializeDirectoryStructure();
-    }
-  }, [directoryStructureCreated]);
-
-  const browsePath = async (field: keyof typeof config) => {
-    try {
-      const { getFilePath } = await import('@/utils/moneroUtils');
-      const path = await getFilePath();
-      if (path) {
-        setConfig((prev) => ({ ...prev, [field]: path }));
-      }
-    } catch (error) {
-      console.error('Failed to get file path:', error);
+  // Status badge component
+  const StatusBadge = ({ status }: { status: string }) => {
+    switch (status) {
+      case 'running':
+        return <Badge className="bg-green-500 hover:bg-green-600">Running</Badge>;
+      case 'stopped':
+        return <Badge variant="outline" className="border-red-500 text-red-500">Stopped</Badge>;
+      case 'error':
+        return <Badge variant="destructive">Error</Badge>;
+      default:
+        return <Badge variant="secondary">Unknown</Badge>;
     }
   };
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text).then(
-      () => {
-        toast({
-          title: "Copied to clipboard",
-          description: `${label} has been copied to your clipboard.`,
-        });
-      },
-      (err) => {
-        toast({
-          variant: "destructive",
-          title: "Failed to copy",
-          description: `Could not copy ${label}: ${err}`,
-        });
-      }
-    );
-  };
-
-  const runRpcTest = async (proxyType: 'clearnet' | 'tor' | 'i2p') => {
-    try {
-      if (!isRunning) {
-        toast({
-          variant: "destructive",
-          title: "Monero daemon is not running",
-          description: "Start the Monero daemon first to test RPC commands."
-        });
-        return;
-      }
-
-      // Check if the required proxy is running for tor/i2p tests
-      if (proxyType === 'tor' && !torProxyRunning) {
-        toast({
-          variant: "destructive",
-          title: "Tor proxy is not running",
-          description: "Start Tor proxy first to test RPC over Tor."
-        });
-        return;
-      }
-
-      if (proxyType === 'i2p' && !i2pProxyRunning) {
-        toast({
-          variant: "destructive",
-          title: "I2P proxy is not running",
-          description: "Start I2P proxy first to test RPC over I2P."
-        });
-        return;
-      }
-
-      toast({
-        title: "Testing RPC",
-        description: `Running RPC test over ${proxyType}...`,
-      });
-
-      const result = await testRpcCommand(proxyType);
-      
-      // Update the local state with the result
-      setRpcResults(prev => ({
-        ...prev,
-        [proxyType]: { 
-          tested: true, 
-          result: result.output,
-          success: result.success
-        }
-      }));
-      
-      toast({
-        title: result.success ? "RPC test successful" : "RPC test failed",
-        description: `Test over ${proxyType} ${result.success ? 'completed successfully' : 'failed'}`,
-        variant: result.success ? "default" : "destructive",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: `RPC test failed`,
-        description: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  };
-
-  const testI2pNetwork = async (testType: 'socks' | 'site') => {
-    try {
-      if (!i2pProxyRunning) {
-        toast({
-          variant: "destructive",
-          title: "I2P proxy is not running",
-          description: "Start I2P proxy first to test I2P connectivity."
-        });
-        return;
-      }
-
-      toast({
-        title: "Testing I2P Connection",
-        description: `Running I2P ${testType === 'socks' ? 'SOCKS proxy' : 'site access'} test...`,
-      });
-
-      // In a real implementation, this would actually make the connections
-      // Simulate the test for demonstration purposes
-      setTimeout(() => {
-        const success = Math.random() > 0.2; // 80% success rate for demo
-        
-        if (testType === 'socks') {
-          const output = success 
-            ? "Connection successful through I2P SOCKS proxy at 127.0.0.1:4447"
-            : "Failed to connect through I2P SOCKS proxy. Check if proxy is running on port 4447";
-            
-          setI2pNetworkTests(prev => ({
-            ...prev,
-            socksTest: { tested: true, success, output }
-          }));
-        } else {
-          const i2pSite = "i2p-projekt.i2p";
-          const output = success 
-            ? `Successfully connected to ${i2pSite} through I2P network. Site responded with 200 OK.`
-            : `Failed to connect to ${i2pSite}. Make sure I2P is properly configured.`;
-            
-          setI2pNetworkTests(prev => ({
-            ...prev,
-            siteTest: { tested: true, success, output }
-          }));
-        }
-        
-        toast({
-          title: success ? "I2P Test Successful" : "I2P Test Failed",
-          description: `${testType === 'socks' ? 'SOCKS proxy' : 'Site access'} test ${success ? 'completed successfully' : 'failed'}`,
-          variant: success ? "default" : "destructive",
-        });
-      }, 1500);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: `I2P test failed`,
-        description: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  };
-
-  const checkI2pAddress = async () => {
-    try {
-      if (!i2pProxyRunning) {
-        toast({
-          variant: "destructive",
-          title: "I2P proxy is not running",
-          description: "Start I2P proxy first to check I2P address."
-        });
-        return;
-      }
-
-      toast({
-        title: "Checking I2P Address",
-        description: "Querying I2P tunnel information...",
-      });
-
-      // Simulate checking I2P address using the command:
-      // curl -s http://127.0.0.1:7070/?page=i2p_tunnels | grep -Eo "[a-zA-Z0-9./?=_%:-]*" | grep "18089"
-      setTimeout(() => {
-        const success = Math.random() > 0.1; // 90% success rate for demo
-        
-        if (success && !config.i2pAddress) {
-          const generatedAddress = `${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}.b32.i2p`;
-          
-          setConfig(prev => ({
-            ...prev,
-            i2pAddress: generatedAddress
-          }));
-          
-          toast({
-            title: "I2P Address Found",
-            description: `Successfully retrieved I2P address: ${generatedAddress}`,
-          });
-        } else if (success && config.i2pAddress) {
-          toast({
-            title: "I2P Address Confirmed",
-            description: `Confirmed I2P address: ${config.i2pAddress}`,
-          });
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Failed to Retrieve I2P Address",
-            description: "Could not get I2P address from router console. Check if I2P is properly configured.",
-          });
-        }
-      }, 2000);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "I2P Address Check Failed",
-        description: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  };
-
-  const restartDaemon = async () => {
-    try {
-      if (!isRunning) {
-        toast({
-          variant: "destructive",
-          title: "Monero daemon is not running",
-          description: "Start the Monero daemon first before attempting to restart."
-        });
-        return;
-      }
-
-      // Import and call the restart function
-      const { restartMoneroDaemon } = await import('@/utils/moneroUtils');
-      const result = await restartMoneroDaemon();
-      
-      toast({
-        title: result.success ? "Daemon restart initiated" : "Failed to restart daemon",
-        description: result.message,
-        variant: result.success ? "default" : "destructive",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to restart daemon",
-        description: error instanceof Error ? error.message : "Unknown error",
-      });
+  // Connection test status component
+  const TestStatusIcon = ({ status }: { status: 'idle' | 'testing' | 'success' | 'error' }) => {
+    switch (status) {
+      case 'testing':
+        return <Loader2 className="h-4 w-4 animate-spin text-yellow-500" />;
+      case 'success':
+        return <Check className="h-4 w-4 text-green-500" />;
+      case 'error':
+        return <X className="h-4 w-4 text-red-500" />;
+      default:
+        return <div className="h-4 w-4" />;
     }
   };
 
@@ -351,574 +280,407 @@ const ProxyTab: React.FC = () => {
     <div className="space-y-6 animate-slideUp">
       <Card className="glass-panel">
         <CardHeader>
-          <CardTitle>Anonymity Network Proxies</CardTitle>
+          <CardTitle>Privacy Networks</CardTitle>
           <CardDescription>
-            Configure and manage Tor and I2P proxies for enhanced privacy
+            Configure and manage your Tor and I2P connections
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="tor" className="w-full">
+          <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid grid-cols-2 mb-6">
-              <TabsTrigger value="tor">Tor</TabsTrigger>
-              <TabsTrigger value="i2p">I2P</TabsTrigger>
+              <TabsTrigger value="tor" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                <span>Tor Network</span>
+              </TabsTrigger>
+              <TabsTrigger value="i2p" className="flex items-center gap-2">
+                <Network className="h-4 w-4" />
+                <span>I2P Network</span>
+              </TabsTrigger>
             </TabsList>
 
             {/* TOR TAB */}
-            <TabsContent value="tor">
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Tor Configuration */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">Tor Configuration</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="tor-socks-port">SOCKS Port</Label>
-                        <Input
-                          id="tor-socks-port"
-                          value={config.torSocksPort}
-                          onChange={(e) => setConfig(prev => ({ ...prev, torSocksPort: e.target.value }))}
-                          placeholder="9050"
-                          className="flex-1"
-                        />
-                        <p className="text-xs text-muted-foreground">Tor SOCKS port (default: 9050)</p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="tor-hidden-port">Hidden Service Port</Label>
-                        <Input
-                          id="tor-hidden-port"
-                          value={(config.anonymousInboundTor || "").split(',')[0]?.split(':')[1] || "18083"}
-                          onChange={(e) => {
-                            // Parse existing anonymousInboundTor to update only the port
-                            const parts = (config.anonymousInboundTor || "").split(',');
-                            if (parts.length >= 1) {
-                              const addrParts = parts[0].split(':');
-                              addrParts[1] = e.target.value;
-                              parts[0] = addrParts.join(':');
-                              setConfig(prev => ({ ...prev, anonymousInboundTor: parts.join(',') }));
-                            } else {
-                              setConfig(prev => ({ ...prev, anonymousInboundTor: `127.0.0.1:${e.target.value}` }));
-                            }
-                          }}
-                          placeholder="18083"
-                          className="flex-1"
-                        />
-                        <p className="text-xs text-muted-foreground">Port to expose via Tor hidden service</p>
-                      </div>
-
-                      <div className="flex justify-between items-center">
-                        <div className="space-y-1">
-                          <h3 className="font-medium">Current Status</h3>
-                          <div className="flex items-center space-x-2">
-                            <div className={`h-2 w-2 rounded-full ${torProxyRunning ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                            <span className="text-sm">{torProxyRunning ? 'Running' : 'Stopped'}</span>
-                          </div>
-                        </div>
-                        {torProxyRunning ? (
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={stopTorProxy}
-                            className="flex items-center space-x-2"
-                          >
-                            <PowerOff className="h-4 w-4" />
-                            <span>Stop Tor</span>
-                          </Button>
+            <TabsContent value="tor" className="space-y-6">
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-medium">Tor Status</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Manage Tor proxy service
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={torStatus} />
+                      <div className="h-5 w-px bg-border mx-1"></div>
+                      <Button 
+                        variant={torStatus === 'running' ? "destructive" : "default"}
+                        size="sm"
+                        disabled={torLoading}
+                        onClick={handleTorToggle}
+                        className="flex gap-1 items-center"
+                      >
+                        {torLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            onClick={startTorProxy}
-                            className="flex items-center space-x-2 bg-purple-700 hover:bg-purple-800"
-                          >
-                            <Power className="h-4 w-4" />
-                            <span>Start Tor</span>
-                          </Button>
+                          <Power className="h-4 w-4" />
                         )}
-                      </div>
+                        {torStatus === 'running' ? "Stop" : "Start"}
+                      </Button>
+                      {torStatus === 'running' && (
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          disabled={torLoading}
+                          onClick={restartTor}
+                          className="flex gap-1 items-center"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
 
-                      <div className="pt-3 border-t">
-                        <div className="text-sm font-medium mb-3">Default Configuration</div>
-                        <ScrollArea className="h-32 w-full rounded-md border p-2 font-mono text-xs">
-                          <pre className="text-gray-300">
-{`# Default Tor configuration for Monero Suite
-SocksPort ${config.torSocksPort || "9050"}
-ControlPort 9051
-
-# Data directory
-DataDirectory ${config.torDataPath || "/app/tor/data"}
-
-# Log settings
-Log notice file ${config.torLogPath || "/app/tor/logs/tor.log"}
-
-# Hidden service settings
-HiddenServiceDir ${config.torDataPath ? config.torDataPath + '/hidden_service' : '/app/tor/hidden_service'}
-HiddenServicePort ${(config.anonymousInboundTor || "").split(',')[0]?.split(':')[1] || "18083"} 127.0.0.1:${(config.anonymousInboundTor || "").split(',')[0]?.split(':')[1] || "18083"}
-
-# Exit policy
-ExitPolicy reject *:*`}
-                          </pre>
-                        </ScrollArea>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Tor Status */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">Tor Status Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <Label>Onion Address</Label>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => setShowTorAddress(!showTorAddress)}
-                            className="h-8 w-8 p-0"
-                          >
-                            {showTorAddress ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label>Service Address</Label>
+                        <div className="text-sm text-muted-foreground">
+                          127.0.0.1:{torConfig.socksPort}
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <div className="bg-black/30 p-2 rounded-md font-mono text-xs flex-1 overflow-hidden">
-                            {showTorAddress ? (
-                              config.torOnionAddress ? 
-                                <span className="text-green-400">{config.torOnionAddress}</span> : 
-                                <span className="text-muted-foreground">Not available. Start Tor to generate.</span>
-                            ) : (
-                              "••••••••••••••••••••.onion"
-                            )}
-                          </div>
-                          {config.torOnionAddress && (
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
-                              onClick={() => copyToClipboard(config.torOnionAddress, "Onion address")}
-                              disabled={!config.torOnionAddress}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex gap-1 items-center"
+                          onClick={handleTestTorConnection}
+                          disabled={torDirectStatus === 'testing'}
+                        >
+                          {torDirectStatus === 'testing' ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Activity className="h-4 w-4" />
                           )}
+                          Test Direct
+                        </Button>
+                        <TestStatusIcon status={torDirectStatus} />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label>SOCKS Proxy</Label>
+                        <div className="text-sm text-muted-foreground">
+                          socks5://127.0.0.1:{torConfig.socksPort}
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Label className="text-xs">SOCKS5 Proxy</Label>
-                          <div className="font-mono text-xs bg-black/30 p-2 rounded-md text-amber-300">
-                            127.0.0.1:{config.torSocksPort || "9050"}
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Hidden Service Port</Label>
-                          <div className="font-mono text-xs bg-black/30 p-2 rounded-md text-amber-300">
-                            {(config.anonymousInboundTor || "").split(',')[0]?.split(':')[1] || "18083"}
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex gap-1 items-center"
+                          onClick={handleTestTorSocks}
+                          disabled={torSocksStatus === 'testing'}
+                        >
+                          {torSocksStatus === 'testing' ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Link className="h-4 w-4" />
+                          )}
+                          Test SOCKS
+                        </Button>
+                        <TestStatusIcon status={torSocksStatus} />
                       </div>
+                    </div>
 
-                      <div className="space-y-2">
-                        <Label>Port Status</Label>
-                        <div className="flex space-x-2">
+                    {torStatus === 'running' && (
+                      <div className="border rounded-md p-3 bg-black/20">
+                        <div className="flex justify-between items-center mb-2">
+                          <Label>Tor Onion Address</Label>
                           <Button 
-                            onClick={() => checkPortStatus('tor')} 
                             variant="outline" 
-                            size="sm"
-                            className="flex-1 flex items-center justify-center space-x-2"
+                            size="sm" 
+                            className="flex items-center space-x-1"
+                            onClick={fetchHiddenService}
+                            disabled={refreshingHs}
                           >
-                            <Terminal className="h-4 w-4" />
-                            <span>Check Tor Ports</span>
+                            <RefreshCw className={`h-3 w-3 ${refreshingHs ? 'animate-spin' : ''}`} />
+                            <span>Refresh</span>
                           </Button>
                         </div>
-                        {connectionTestResults.portStatus.tor.checked && (
-                          <div className={`text-xs p-2 rounded-md ${connectionTestResults.portStatus.tor.open ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
-                            Port {connectionTestResults.portStatus.tor.port} is {connectionTestResults.portStatus.tor.open ? 'open' : 'closed'}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2 pt-3 border-t">
-                        <Label>Test RPC over Tor</Label>
-                        <div className="flex space-x-2">
-                          <Button 
-                            onClick={() => runRpcTest('tor')} 
-                            variant="outline" 
-                            size="sm"
-                            className="flex-1 flex items-center justify-center space-x-2"
-                            disabled={!torProxyRunning || !isRunning}
-                          >
-                            <Terminal className="h-4 w-4" />
-                            <span>Test RPC Connection</span>
-                          </Button>
+                        <div className="font-mono text-xs bg-black/40 p-2 rounded-md overflow-x-auto text-monero-blue-light break-all">
+                          {hiddenService || "Not available. Configure hidden service in torrc."}
                         </div>
-                        
-                        {rpcResults.tor.tested && (
-                          <div className="space-y-2 mt-2">
-                            <div className={`text-xs p-2 rounded-md ${rpcResults.tor.success ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
-                              {rpcResults.tor.success ? 'RPC test over Tor successful' : 'RPC test over Tor failed'}
-                            </div>
-                            
-                            <Collapsible>
-                              <CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-xs text-muted-foreground hover:text-white">
-                                <span>Show RPC Output</span>
-                              </CollapsibleTrigger>
-                              <CollapsibleContent>
-                                <ScrollArea className="h-40 w-full rounded-md border p-2 bg-black/30 font-mono text-xs text-amber-100">
-                                  {rpcResults.tor.result || "No output available"}
-                                </ScrollArea>
-                              </CollapsibleContent>
-                            </Collapsible>
-                          </div>
-                        )}
                       </div>
-                    </CardContent>
-                  </Card>
+                    )}
+                  </div>
                 </div>
 
-                {/* Tor Logs */}
-                <Collapsible 
-                  open={torLogExpanded} 
-                  onOpenChange={setTorLogExpanded}
-                  className="border rounded-md"
-                >
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
-                    <span className="font-medium">Tor Logs</span>
-                    <div className={`h-2 w-2 rounded-full ${torProxyRunning ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <ScrollArea className="h-64 w-full bg-black/30 p-4 font-mono text-xs">
-                      {logs.torProxy && logs.torProxy.length > 0 ? (
-                        logs.torProxy.map((line, index) => (
-                          <div key={index} className="text-gray-300">
-                            {line}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-gray-500 italic">
-                          {torProxyRunning ? "No log output yet..." : "Start Tor to see logs"}
-                        </div>
-                      )}
-                      <div ref={torLogEndRef} />
-                    </ScrollArea>
-                  </CollapsibleContent>
-                </Collapsible>
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium mb-4">Tor Configuration</h3>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="socks-port">SOCKS Port</Label>
+                      <Input
+                        id="socks-port"
+                        value={torConfig.socksPort}
+                        onChange={(e) => handleTorConfigChange('socksPort', e.target.value)}
+                        placeholder="9050"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="control-port">Control Port</Label>
+                      <Input
+                        id="control-port"
+                        value={torConfig.controlPort}
+                        onChange={(e) => handleTorConfigChange('controlPort', e.target.value)}
+                        placeholder="9051"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2 py-2">
+                      <Switch
+                        id="enable-control"
+                        checked={torConfig.controlEnabled}
+                        onCheckedChange={(value) => handleTorConfigChange('controlEnabled', value)}
+                      />
+                      <Label htmlFor="enable-control">Enable Control Port</Label>
+                    </div>
+                    {torConfig.controlEnabled && (
+                      <div className="space-y-2">
+                        <Label htmlFor="control-password">Control Password</Label>
+                        <Input
+                          id="control-password"
+                          type="password"
+                          value={torConfig.controlPassword}
+                          onChange={(e) => handleTorConfigChange('controlPassword', e.target.value)}
+                          placeholder="Password for Tor control port"
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="torrc">Custom Torrc Settings</Label>
+                      <Textarea
+                        id="torrc"
+                        value={torConfig.customSettings}
+                        onChange={(e) => handleTorConfigChange('customSettings', e.target.value)}
+                        placeholder="# Add custom Tor configuration here"
+                        className="font-mono text-xs h-32"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
             {/* I2P TAB */}
-            <TabsContent value="i2p">
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* I2P Configuration */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">I2P Configuration</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="i2p-sam-port">SAM Port</Label>
-                        <Input
-                          id="i2p-sam-port"
-                          value={config.i2pSamPort}
-                          onChange={(e) => setConfig(prev => ({ ...prev, i2pSamPort: e.target.value }))}
-                          placeholder="7656"
-                          className="flex-1"
-                        />
-                        <p className="text-xs text-muted-foreground">I2P SAM port for application communication (default: 7656)</p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="i2p-inbound-port">I2P Node Service Port</Label>
-                        <Input
-                          id="i2p-inbound-port"
-                          value={(config.anonymousInboundI2p || "").split(',')[0]?.split(':')[1] || "18085"}
-                          onChange={(e) => {
-                            // Parse existing anonymousInboundI2p to update only the port
-                            const parts = (config.anonymousInboundI2p || "").split(',');
-                            if (parts.length >= 1) {
-                              const addrParts = parts[0].split(':');
-                              addrParts[1] = e.target.value;
-                              parts[0] = addrParts.join(':');
-                              setConfig(prev => ({ ...prev, anonymousInboundI2p: parts.join(',') }));
-                            } else {
-                              setConfig(prev => ({ ...prev, anonymousInboundI2p: `127.0.0.1:${e.target.value}` }));
-                            }
-                          }}
-                          placeholder="18085"
-                          className="flex-1"
-                        />
-                        <p className="text-xs text-muted-foreground">P2P port to expose via I2P</p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="i2p-rpc-port">I2P RPC Service Port</Label>
-                        <Input
-                          id="i2p-rpc-port"
-                          placeholder="18089"
-                          defaultValue="18089"
-                          className="flex-1"
-                        />
-                        <p className="text-xs text-muted-foreground">RPC port to expose via I2P</p>
-                      </div>
-
-                      <div className="flex justify-between items-center">
-                        <div className="space-y-1">
-                          <h3 className="font-medium">Current Status</h3>
-                          <div className="flex items-center space-x-2">
-                            <div className={`h-2 w-2 rounded-full ${i2pProxyRunning ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                            <span className="text-sm">{i2pProxyRunning ? 'Running' : 'Stopped'}</span>
-                          </div>
-                        </div>
-                        {i2pProxyRunning ? (
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={stopI2PProxy}
-                            className="flex items-center space-x-2"
-                          >
-                            <PowerOff className="h-4 w-4" />
-                            <span>Stop I2P</span>
-                          </Button>
+            <TabsContent value="i2p" className="space-y-6">
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-medium">I2P Status</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Manage I2P router service
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={i2pStatus} />
+                      <div className="h-5 w-px bg-border mx-1"></div>
+                      <Button 
+                        variant={i2pStatus === 'running' ? "destructive" : "default"}
+                        size="sm"
+                        disabled={i2pLoading}
+                        onClick={handleI2pToggle}
+                        className="flex gap-1 items-center"
+                      >
+                        {i2pLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            onClick={startI2PProxy}
-                            className="flex items-center space-x-2 bg-blue-700 hover:bg-blue-800"
-                          >
-                            <Power className="h-4 w-4" />
-                            <span>Start I2P</span>
-                          </Button>
+                          <Power className="h-4 w-4" />
                         )}
-                      </div>
+                        {i2pStatus === 'running' ? "Stop" : "Start"}
+                      </Button>
+                      {i2pStatus === 'running' && (
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          disabled={i2pLoading}
+                          onClick={restartI2p}
+                          className="flex gap-1 items-center"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
 
-                      <div className="space-y-3 pt-3 border-t">
-                        <div className="text-sm font-medium">I2P Tunnels Configuration</div>
-                        <ScrollArea className="h-32 w-full rounded-md border p-2 font-mono text-xs">
-                          <pre className="text-gray-300">
-{`# Default I2P tunnels configuration for Monero Suite
-
-[monero-node]
-type = server
-host = 127.0.0.1
-# Anonymous inbound port
-port = ${(config.anonymousInboundI2p || "").split(',')[0]?.split(':')[1] || "18085"}
-inport = 0
-keys = monero-mainnet.dat
-
-[monero-rpc]
-type = server
-host = 127.0.0.1
-# Restricted RPC port
-port = 18089
-keys = monero-mainnet.dat`}
-                          </pre>
-                        </ScrollArea>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* I2P Status */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">I2P Status Information</CardTitle>
+                  <Card className="border bg-black/10">
+                    <CardHeader className="py-2 px-4">
+                      <CardTitle className="text-sm font-medium">Connection Tests</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <Label>I2P Address</Label>
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => setShowI2pAddress(!showI2pAddress)}
-                              className="h-8 w-8 p-0"
-                            >
-                              {showI2pAddress ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={checkI2pAddress}
-                              className="h-8 w-8 p-0"
-                              title="Check I2P Address"
-                            >
-                              <Terminal className="h-4 w-4" />
-                            </Button>
+                    <CardContent className="py-2 px-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <Label>I2P Router</Label>
+                            <div className="text-sm text-muted-foreground">
+                              127.0.0.1:{i2pConfig.routerPort}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <div className="bg-black/30 p-2 rounded-md font-mono text-xs flex-1 overflow-hidden">
-                            {showI2pAddress ? (
-                              config.i2pAddress ? 
-                                <span className="text-green-400">{config.i2pAddress}</span> : 
-                                <span className="text-muted-foreground">Not available. Start I2P to generate.</span>
-                            ) : (
-                              "••••••••••••••••••••.b32.i2p"
-                            )}
-                          </div>
-                          {config.i2pAddress && (
+                          <div className="flex items-center gap-2">
                             <Button 
                               variant="outline" 
-                              size="icon" 
-                              onClick={() => copyToClipboard(config.i2pAddress, "I2P address")}
-                              disabled={!config.i2pAddress}
+                              size="sm" 
+                              className="flex gap-1 items-center"
+                              onClick={handleTestI2pConnection}
+                              disabled={i2pDirectStatus === 'testing'}
                             >
-                              <Copy className="h-4 w-4" />
+                              {i2pDirectStatus === 'testing' ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Activity className="h-4 w-4" />
+                              )}
+                              Test
                             </Button>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Get address: <code className="bg-black/20 px-1 rounded">curl -s http://127.0.0.1:7070/?page=i2p_tunnels | grep -Eo "[a-zA-Z0-9./?=_%:-]*" | grep "18089"</code>
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Label className="text-xs">I2P SOCKS Proxy</Label>
-                          <div className="font-mono text-xs bg-black/30 p-2 rounded-md text-amber-300">
-                            127.0.0.1:4447
+                            <TestStatusIcon status={i2pDirectStatus} />
                           </div>
                         </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">SAM Port</Label>
-                          <div className="font-mono text-xs bg-black/30 p-2 rounded-md text-amber-300">
-                            {config.i2pSamPort || "7656"}
-                          </div>
-                        </div>
-                      </div>
 
-                      <div className="space-y-2">
-                        <Label>Port Status</Label>
-                        <div className="flex space-x-2">
-                          <Button 
-                            onClick={() => checkPortStatus('i2p')} 
-                            variant="outline" 
-                            size="sm"
-                            className="flex-1 flex items-center justify-center space-x-2"
-                          >
-                            <Terminal className="h-4 w-4" />
-                            <span>Check I2P Ports</span>
-                          </Button>
-                        </div>
-                        {connectionTestResults.portStatus.i2p.checked && (
-                          <div className={`text-xs p-2 rounded-md ${connectionTestResults.portStatus.i2p.open ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
-                            Port {connectionTestResults.portStatus.i2p.port} is {connectionTestResults.portStatus.i2p.open ? 'open' : 'closed'}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2 pt-3 border-t">
-                        <Label>Test I2P Connectivity</Label>
-                        <div className="flex space-x-2">
-                          <Button 
-                            onClick={() => testI2pNetwork('socks')} 
-                            variant="outline" 
-                            size="sm"
-                            className="flex-1 flex items-center justify-center space-x-2"
-                            disabled={!i2pProxyRunning}
-                          >
-                            <Network className="h-4 w-4" />
-                            <span>Test SOCKS Proxy</span>
-                          </Button>
-                          <Button 
-                            onClick={() => testI2pNetwork('site')} 
-                            variant="outline" 
-                            size="sm"
-                            className="flex-1 flex items-center justify-center space-x-2"
-                            disabled={!i2pProxyRunning}
-                          >
-                            <Globe className="h-4 w-4" />
-                            <span>Test I2P Site Access</span>
-                          </Button>
-                        </div>
-                        
-                        {i2pNetworkTests.socksTest.tested && (
-                          <div className="mt-2">
-                            <div className={`text-xs p-2 rounded-md ${i2pNetworkTests.socksTest.success ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
-                              {i2pNetworkTests.socksTest.output}
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <Label>SAM Bridge</Label>
+                            <div className="text-sm text-muted-foreground">
+                              127.0.0.1:{i2pConfig.samPort}
                             </div>
                           </div>
-                        )}
-                        
-                        {i2pNetworkTests.siteTest.tested && (
-                          <div className="mt-2">
-                            <div className={`text-xs p-2 rounded-md ${i2pNetworkTests.siteTest.success ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
-                              {i2pNetworkTests.siteTest.output}
-                            </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex gap-1 items-center"
+                              onClick={handleTestI2pSam}
+                              disabled={i2pSamStatus === 'testing'}
+                            >
+                              {i2pSamStatus === 'testing' ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Server className="h-4 w-4" />
+                              )}
+                              Test
+                            </Button>
+                            <TestStatusIcon status={i2pSamStatus} />
                           </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2 pt-3 border-t">
-                        <Label>Test RPC over I2P</Label>
-                        <div className="flex space-x-2">
-                          <Button 
-                            onClick={() => runRpcTest('i2p')} 
-                            variant="outline" 
-                            size="sm"
-                            className="flex-1 flex items-center justify-center space-x-2"
-                            disabled={!i2pProxyRunning || !isRunning}
-                          >
-                            <Terminal className="h-4 w-4" />
-                            <span>Test RPC Connection</span>
-                          </Button>
                         </div>
-                        
-                        {rpcResults.i2p.tested && (
-                          <div className="space-y-2 mt-2">
-                            <div className={`text-xs p-2 rounded-md ${rpcResults.i2p.success ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
-                              {rpcResults.i2p.success ? 'RPC test over I2P successful' : 'RPC test over I2P failed'}
+
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <Label>HTTP Proxy</Label>
+                            <div className="text-sm text-muted-foreground">
+                              http://127.0.0.1:{i2pConfig.httpProxyPort}
                             </div>
-                            
-                            <Collapsible>
-                              <CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-xs text-muted-foreground hover:text-white">
-                                <span>Show RPC Output</span>
-                              </CollapsibleTrigger>
-                              <CollapsibleContent>
-                                <ScrollArea className="h-40 w-full rounded-md border p-2 bg-black/30 font-mono text-xs text-amber-100">
-                                  {rpcResults.i2p.result || "No output available"}
-                                </ScrollArea>
-                              </CollapsibleContent>
-                            </Collapsible>
                           </div>
-                        )}
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex gap-1 items-center"
+                              onClick={handleTestI2pHttpProxy}
+                              disabled={i2pHttpStatus === 'testing'}
+                            >
+                              {i2pHttpStatus === 'testing' ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Globe className="h-4 w-4" />
+                              )}
+                              Test
+                            </Button>
+                            <TestStatusIcon status={i2pHttpStatus} />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <Label>SOCKS Proxy</Label>
+                            <div className="text-sm text-muted-foreground">
+                              socks://127.0.0.1:{i2pConfig.socksProxyPort}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex gap-1 items-center"
+                              onClick={handleTestI2pSocksProxy}
+                              disabled={i2pSocksStatus === 'testing'}
+                            >
+                              {i2pSocksStatus === 'testing' ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Link className="h-4 w-4" />
+                              )}
+                              Test
+                            </Button>
+                            <TestStatusIcon status={i2pSocksStatus} />
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* I2P Logs */}
-                <Collapsible 
-                  open={i2pLogExpanded} 
-                  onOpenChange={setI2pLogExpanded}
-                  className="border rounded-md"
-                >
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
-                    <span className="font-medium">I2P Logs</span>
-                    <div className={`h-2 w-2 rounded-full ${i2pProxyRunning ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <ScrollArea className="h-64 w-full bg-black/30 p-4 font-mono text-xs">
-                      {logs.i2pProxy && logs.i2pProxy.length > 0 ? (
-                        logs.i2pProxy.map((line, index) => (
-                          <div key={index} className="text-gray-300">
-                            {line}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-gray-500 italic">
-                          {i2pProxyRunning ? "No log output yet..." : "Start I2P to see logs"}
-                        </div>
-                      )}
-                      <div ref={i2pLogEndRef} />
-                    </ScrollArea>
-                  </CollapsibleContent>
-                </Collapsible>
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium mb-4">I2P Configuration</h3>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="router-port">Router Console Port</Label>
+                      <Input
+                        id="router-port"
+                        value={i2pConfig.routerPort}
+                        onChange={(e) => handleI2pConfigChange('routerPort', e.target.value)}
+                        placeholder="7070"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sam-port">SAM Bridge Port</Label>
+                      <Input
+                        id="sam-port"
+                        value={i2pConfig.samPort}
+                        onChange={(e) => handleI2pConfigChange('samPort', e.target.value)}
+                        placeholder="7656"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="http-proxy-port">HTTP Proxy Port</Label>
+                        <Input
+                          id="http-proxy-port"
+                          value={i2pConfig.httpProxyPort}
+                          onChange={(e) => handleI2pConfigChange('httpProxyPort', e.target.value)}
+                          placeholder="4444"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="socks-proxy-port">SOCKS Proxy Port</Label>
+                        <Input
+                          id="socks-proxy-port"
+                          value={i2pConfig.socksProxyPort}
+                          onChange={(e) => handleI2pConfigChange('socksProxyPort', e.target.value)}
+                          placeholder="4447"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="i2p-custom">Custom I2P Settings</Label>
+                      <Textarea
+                        id="i2p-custom"
+                        value={i2pConfig.customSettings}
+                        onChange={(e) => handleI2pConfigChange('customSettings', e.target.value)}
+                        placeholder="# Add custom I2P configuration here"
+                        className="font-mono text-xs h-32"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
