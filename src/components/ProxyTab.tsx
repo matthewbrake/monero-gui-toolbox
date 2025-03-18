@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useMonero } from '@/contexts/MoneroContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -806,4 +807,125 @@ keys = monero-mainnet.dat`}
                         </div>
                         {connectionTestResults.portStatus.i2p.checked && (
                           <div className={`text-xs p-2 rounded-md ${connectionTestResults.portStatus.i2p.open ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
-                            Port {connectionTestResults.portStatus.i
+                            Port {connectionTestResults.portStatus.i2p.port} is {connectionTestResults.portStatus.i2p.open ? 'open' : 'closed'}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 pt-3 border-t">
+                        <Label>Test I2P Connectivity</Label>
+                        <div className="flex space-x-2">
+                          <Button 
+                            onClick={() => testI2pNetwork('socks')} 
+                            variant="outline" 
+                            size="sm"
+                            className="flex-1 flex items-center justify-center space-x-2"
+                            disabled={!i2pProxyRunning}
+                          >
+                            <Network className="h-4 w-4" />
+                            <span>Test SOCKS Proxy</span>
+                          </Button>
+                          <Button 
+                            onClick={() => testI2pNetwork('site')} 
+                            variant="outline" 
+                            size="sm"
+                            className="flex-1 flex items-center justify-center space-x-2"
+                            disabled={!i2pProxyRunning}
+                          >
+                            <Globe className="h-4 w-4" />
+                            <span>Test I2P Site Access</span>
+                          </Button>
+                        </div>
+                        
+                        {i2pNetworkTests.socksTest.tested && (
+                          <div className="mt-2">
+                            <div className={`text-xs p-2 rounded-md ${i2pNetworkTests.socksTest.success ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
+                              {i2pNetworkTests.socksTest.output}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {i2pNetworkTests.siteTest.tested && (
+                          <div className="mt-2">
+                            <div className={`text-xs p-2 rounded-md ${i2pNetworkTests.siteTest.success ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
+                              {i2pNetworkTests.siteTest.output}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 pt-3 border-t">
+                        <Label>Test RPC over I2P</Label>
+                        <div className="flex space-x-2">
+                          <Button 
+                            onClick={() => runRpcTest('i2p')} 
+                            variant="outline" 
+                            size="sm"
+                            className="flex-1 flex items-center justify-center space-x-2"
+                            disabled={!i2pProxyRunning || !isRunning}
+                          >
+                            <Terminal className="h-4 w-4" />
+                            <span>Test RPC Connection</span>
+                          </Button>
+                        </div>
+                        
+                        {rpcResults.i2p.tested && (
+                          <div className="space-y-2 mt-2">
+                            <div className={`text-xs p-2 rounded-md ${rpcResults.i2p.success ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
+                              {rpcResults.i2p.success ? 'RPC test over I2P successful' : 'RPC test over I2P failed'}
+                            </div>
+                            
+                            <Collapsible>
+                              <CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-xs text-muted-foreground hover:text-white">
+                                <span>Show RPC Output</span>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <ScrollArea className="h-40 w-full rounded-md border p-2 bg-black/30 font-mono text-xs text-amber-100">
+                                  {rpcResults.i2p.result || "No output available"}
+                                </ScrollArea>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* I2P Logs */}
+                <Collapsible 
+                  open={i2pLogExpanded} 
+                  onOpenChange={setI2pLogExpanded}
+                  className="border rounded-md"
+                >
+                  <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-secondary/20">
+                    <span className="font-medium">I2P Logs</span>
+                    <div className={`h-2 w-2 rounded-full ${i2pProxyRunning ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <ScrollArea className="h-64 w-full bg-black/30 p-4 font-mono text-xs">
+                      {logs.i2pProxy && logs.i2pProxy.length > 0 ? (
+                        logs.i2pProxy.map((line, index) => (
+                          <div key={index} className="text-gray-300">
+                            {line}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-gray-500 italic">
+                          {i2pProxyRunning ? "No log output yet..." : "Start I2P to see logs"}
+                        </div>
+                      )}
+                      <div ref={i2pLogEndRef} />
+                    </ScrollArea>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default ProxyTab;
