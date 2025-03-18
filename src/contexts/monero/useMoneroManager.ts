@@ -4,7 +4,11 @@ import { toast } from '@/hooks/use-toast';
 import { MoneroConfig, StatusInfo } from '../../types/monero';
 import { defaultStatusInfo } from '../config/defaultConfigs';
 
-export const useMoneroManager = (config: MoneroConfig, appendToConsoleLog: (logs: string[]) => void, appendToLogFile: (logs: string[]) => void) => {
+export const useMoneroManager = (
+  config: MoneroConfig, 
+  appendToConsoleLog: (logs: string[]) => void, 
+  appendToLogFile: (logs: string[]) => void
+) => {
   const [isRunning, setIsRunning] = useState(false);
   const [statusInfo, setStatusInfo] = useState<StatusInfo>(defaultStatusInfo);
   const [isDownloading, setIsDownloading] = useState(false);
