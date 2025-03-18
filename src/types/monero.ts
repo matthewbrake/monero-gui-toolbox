@@ -56,6 +56,14 @@ export interface MoneroConfig {
   addExclusiveNode: string;
   seedNode: string;
   
+  // Additional properties for DaemonConfigTab
+  zmqPort: string;
+  maxConcurrentConnections: string;
+  addPeer: string;
+  pruneSize: string;
+  fastSync: boolean;
+  extraArgs: string;
+  
   // Tor settings
   torEnabled: boolean;
   torPath: string;
@@ -155,6 +163,17 @@ export interface StatusInfo {
   connections: number;
   syncStatus: number;
   version: string;
+}
+
+// Define LogEntry and LogSource for the LogsManager
+export type LogLevel = 'info' | 'warning' | 'error' | 'debug';
+export type LogSource = 'console' | 'logFile' | 'torProxy' | 'i2pProxy';
+
+export interface LogEntry {
+  timestamp: string;
+  level: LogLevel;
+  message: string;
+  source: LogSource;
 }
 
 // Interface for log data

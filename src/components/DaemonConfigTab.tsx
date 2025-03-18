@@ -277,8 +277,8 @@ const DaemonConfigTab: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="disable-dns-checkpoints"
-                        checked={config.disableDnsCheckpoints}
-                        onCheckedChange={() => toggleSwitch('disableDnsCheckpoints')}
+                        checked={config.disableCheckpoints}
+                        onCheckedChange={() => toggleSwitch('disableCheckpoints')}
                       />
                       <Label htmlFor="disable-dns-checkpoints">Disable DNS Checkpoints</Label>
                     </div>
@@ -530,7 +530,7 @@ const DaemonConfigTab: React.FC = () => {
                       {config.anonymousInboundTor ? ` --anonymous-inbound=${config.anonymousInboundTor},127.0.0.1,2` : ''}
                       {config.i2pEnabled ? ` --tx-proxy=i2p,${config.i2pSamPort || '7656'},10` : ''}
                       {config.anonymousInboundI2p ? ` --anonymous-inbound=${config.anonymousInboundI2p},127.0.0.1,3` : ''}
-                      {config.disableDnsCheckpoints ? ' --no-dns' : ''}
+                      {config.disableCheckpoints ? ' --no-dns' : ''}
                       {config.noIgd ? ' --no-igd' : ''}
                       {config.addPeer ? ` --add-peer=${config.addPeer}` : ''}
                       {config.seedNode ? ` --seed-node=${config.seedNode}` : ''}

@@ -57,6 +57,14 @@ export const defaultConfig: MoneroConfig = {
   addExclusiveNode: '',
   seedNode: '',
   
+  // Additional properties for DaemonConfigTab
+  zmqPort: '18082',
+  maxConcurrentConnections: '8',
+  addPeer: '',
+  pruneSize: '1000',
+  fastSync: true,
+  extraArgs: '',
+  
   // Tor settings
   torEnabled: false,
   torPath: './tor/tor.exe',
