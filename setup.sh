@@ -37,6 +37,53 @@ fi
 # Set proper permissions
 chmod -R 755 data
 
+# Create a simple README in the data directory
+cat > data/README.md << 'EOF'
+# Monero Suite Data Directory
+
+This directory contains all persistent data and configuration files for Monero Suite.
+
+## Directory Structure
+
+- **monero/** - Monero daemon data and configurations
+  - **blockchain/** - Blockchain data (can be large)
+  - **logs/** - Monero daemon logs
+  - **configs/** - Custom configuration files
+  - **bin/** - Binary executables (linux/win)
+
+- **tor/** - Tor proxy data and configurations
+  - **data/** - Tor data directory
+  - **logs/** - Tor logs
+  - **config/** - Tor configuration
+  - **hidden_service/** - Tor hidden service keys
+  - **bin/** - Tor binaries (if not using system Tor)
+
+- **i2p/** - I2P proxy data and configurations
+  - **data/** - I2P data directory
+  - **logs/** - I2P logs
+  - **config/** - I2P configuration
+  - **bin/** - I2P binaries (if not using system I2P)
+
+## Binary Placement
+
+To use custom binaries, place them in the appropriate directories:
+
+- For Monero: `data/monero/bin/linux/` or `data/monero/bin/win/`
+- For Tor: `data/tor/bin/`
+- For I2P: `data/i2p/bin/`
+
+## Configuration
+
+The default configuration files are copied during setup. You can modify them:
+
+- Tor: `data/tor/config/torrc`
+- I2P: `data/i2p/config/i2pd.conf` and `data/i2p/config/tunnels.conf`
+- Monero: Configure through the web UI, or directly in `data/monero/configs/`
+
+EOF
+
+echo "✅ Created documentation in data directory"
+
 echo ""
 echo "===================================="
 echo "Setup complete!"
@@ -52,5 +99,10 @@ echo ""
 echo "Access the web interface at:"
 echo "  http://localhost:3000"
 echo ""
-echo "For more information, see README.md"
+echo "Next steps:"
+echo "1. Download Monero binaries or place custom binaries in the bin directories"
+echo "2. Configure your node through the web interface"
+echo "3. Start the Monero daemon and privacy services"
+echo ""
+echo "For more information, see README.md or data/README.md"
 echo "===================================="

@@ -35,11 +35,15 @@ RUN apk add --no-cache \
     wget \
     net-tools \
     socat \
+    iputils \
     # Archive handling 
     tar \
     bzip2 \
     # For better logging
-    jq
+    jq \
+    # For debugging
+    lsof \
+    procps
 
 # Create directory structure
 RUN mkdir -p /app/monero/bin/linux \
@@ -65,8 +69,24 @@ COPY docker/torrc.default /app/tor/config/torrc.default
 COPY docker/i2pd.conf.default /app/i2p/config/i2pd.conf.default
 COPY docker/tunnels.conf.default /app/i2p/config/tunnels.conf.default
 
+# Add a README inside the container
+COPY docker/README.md /app/README.md
+
 # Install a web server to serve the static files
 RUN npm install -g serve
+
+# Add startup script for services
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Create a script to check service status
+RUN echo '#!/bin/bash\n\
+echo "=== Service Status ==="\n\
+echo "Tor: $(pgrep -x tor > /dev/null && echo Running || echo Stopped)"\n\
+echo "I2P: $(pgrep -x i2pd > /dev/null && echo Running || echo Stopped)"\n\
+echo "Monero: $(pgrep -x monerod > /dev/null && echo Running || echo Stopped)"\n\
+echo "Web UI: $(pgrep -f "serve -s dist" > /dev/null && echo Running || echo Stopped)"\n\
+' > /app/status.sh && chmod +x /app/status.sh
 
 # Set the working directory
 WORKDIR /app
@@ -82,10 +102,6 @@ EXPOSE 9050 9051
 EXPOSE 4444 4447 7656 7070
 # Web UI
 EXPOSE 3000
-
-# Set up the entrypoint script
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
 # Set the entrypoint and default command
 ENTRYPOINT ["/entrypoint.sh"]
