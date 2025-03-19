@@ -50,9 +50,9 @@ if [ ! -f /app/monero/bin/linux/monerod ]; then
 fi
 
 # Set permissions
-chown -R 1000:1000 /app/monero
-chown -R 1000:1000 /app/tor
-chown -R 1000:1000 /app/i2p
+chmod -R 755 /app/monero
+chmod -R 755 /app/tor
+chmod -R 755 /app/i2p
 echo "🔒 Permissions set correctly"
 
 # Display welcome message and available services

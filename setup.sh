@@ -11,6 +11,19 @@ echo "This script will create the recommended directory structure"
 echo "and copy template configuration files for Monero Suite."
 echo ""
 
+# Check for Docker and Docker Compose
+if ! command -v docker &> /dev/null; then
+    echo "⚠️ Docker is not installed. Please install Docker before proceeding."
+    echo "   Visit https://docs.docker.com/get-docker/ for installation instructions."
+    exit 1
+fi
+
+if ! command -v docker-compose &> /dev/null; then
+    echo "⚠️ Docker Compose is not installed. Please install it before proceeding."
+    echo "   Visit https://docs.docker.com/compose/install/ for installation instructions."
+    exit 1
+fi
+
 # Create the main data directories
 mkdir -p data/monero/blockchain data/monero/logs data/monero/configs data/monero/bin/linux data/monero/bin/win
 mkdir -p data/tor/data data/tor/logs data/tor/config data/tor/hidden_service data/tor/bin
@@ -106,6 +119,3 @@ echo "3. Start the Monero daemon and privacy services"
 echo ""
 echo "For more information, see README.md or data/README.md"
 echo "===================================="
-
-# Make the script executable
-chmod +x setup.sh
