@@ -39,6 +39,7 @@ export const defaultConfig: MoneroConfig = {
   confirmExternalBind: false,
   rpcPaymentAllowFreeLoopback: true,
   publicNode: false,
+  disableRpcBan: false,
   
   // P2P settings
   p2pBindIp: '0.0.0.0',

@@ -171,15 +171,27 @@ const DaemonConfigTab: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="log-level">Log Level</Label>
+                  <Label htmlFor="max-concurrency">Max Concurrency</Label>
                   <Input
-                    id="log-level"
-                    value={config.logLevel}
-                    onChange={(e) => handleConfigChange('logLevel', e.target.value)}
-                    placeholder="0"
+                    id="max-concurrency"
+                    type="number"
+                    value={config.maxConcurrency}
+                    onChange={(e) => handleConfigChange('maxConcurrency', e.target.value)}
+                    placeholder="4"
                   />
-                  <p className="text-xs text-muted-foreground">Log level (0-4, higher = more verbose)</p>
+                  <p className="text-xs text-muted-foreground">Set to 0 to use number of CPU threads</p>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="log-level">Log Level</Label>
+                <Input
+                  id="log-level"
+                  value={config.logLevel}
+                  onChange={(e) => handleConfigChange('logLevel', e.target.value)}
+                  placeholder="0"
+                />
+                <p className="text-xs text-muted-foreground">Log level (0-4, higher = more verbose)</p>
               </div>
 
               <Separator />
@@ -493,6 +505,25 @@ const DaemonConfigTab: React.FC = () => {
 
               <Separator />
               
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="rpc-section">RPC Settings</Label>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="disable-rpc-ban"
+                      checked={config.disableRpcBan || false}
+                      onCheckedChange={() => toggleSwitch('disableRpcBan')}
+                    />
+                    <Label htmlFor="disable-rpc-ban">Disable RPC Ban</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-7">
+                    Disable automatic IP banning on RPC interface
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+              
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <Terminal className="h-5 w-5 text-amber-400" />
@@ -525,7 +556,9 @@ const DaemonConfigTab: React.FC = () => {
                       {config.p2pBindPort ? ` --p2p-bind-port=${config.p2pBindPort}` : ''}
                       {config.zmqPort ? ` --zmq-pub tcp://127.0.0.1:${config.zmqPort}` : ''}
                       {config.maxConcurrentConnections ? ` --rpc-max-concurrency=${config.maxConcurrentConnections}` : ''}
+                      {config.maxConcurrency ? ` --max-concurrency=${config.maxConcurrency}` : ''}
                       {config.logLevel ? ` --log-level=${config.logLevel}` : ''}
+                      {config.disableRpcBan ? ` --no-igd` : ''}
                       {config.torEnabled ? ` --tx-proxy=tor,${config.torSocksPort || '9050'},10` : ''}
                       {config.anonymousInboundTor ? ` --anonymous-inbound=${config.anonymousInboundTor},127.0.0.1,2` : ''}
                       {config.i2pEnabled ? ` --tx-proxy=i2p,${config.i2pSamPort || '7656'},10` : ''}
@@ -541,6 +574,7 @@ const DaemonConfigTab: React.FC = () => {
                       {config.pruning && config.pruneSize ? ` --prune-blockchain-size=${config.pruneSize}` : ''}
                       {config.fastSync ? ' --fast-block-sync=1' : ''}
                       {config.offline ? ' --offline' : ''}
+                      {config.disableRpcBan ? ' --no-rpc-ban' : ''}
                       {config.extraArgs ? ` ${config.extraArgs}` : ''}
                     </pre>
                   </ScrollArea>
