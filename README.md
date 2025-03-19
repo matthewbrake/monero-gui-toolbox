@@ -25,10 +25,8 @@ The simplest way to run Monero Suite is using Docker:
 git clone https://github.com/yourusername/monero-suite.git
 cd monero-suite
 
-# Create necessary data directories
-mkdir -p data/monero/blockchain data/monero/logs data/monero/configs
-mkdir -p data/tor/data data/tor/logs data/tor/config
-mkdir -p data/i2p/data data/i2p/logs data/i2p/config
+# Run the setup script to create necessary directories
+./setup.sh
 
 # Start the container
 docker-compose up -d
@@ -53,17 +51,26 @@ npm run dev
 
 ## Directory Structure
 
+The Docker setup creates and manages the following directory structure:
+
 ```
 monero-suite/
-├── data/                 # Created when running docker-compose
+├── data/                 # Created when running setup.sh
 │   ├── monero/           # Monero data and configs
+│   │   ├── blockchain/   # Blockchain data storage
+│   │   ├── logs/         # Log files
+│   │   ├── configs/      # Configuration files
+│   │   └── bin/          # Binary executables
 │   ├── tor/              # Tor data and configs
+│   │   ├── data/         # Tor data directory
+│   │   ├── logs/         # Log files
+│   │   └── config/       # Configuration files
 │   └── i2p/              # I2P data and configs
+│       ├── data/         # I2P data directory
+│       ├── logs/         # Log files
+│       └── config/       # Configuration files
 ├── docker/               # Docker configuration files
 ├── src/                  # Source code
-│   ├── components/       # React components
-│   ├── contexts/         # React contexts and hooks
-│   └── utils/            # Utility functions
 └── docker-compose.yml    # Docker Compose configuration
 ```
 

@@ -106,3 +106,6 @@ echo "3. Start the Monero daemon and privacy services"
 echo ""
 echo "For more information, see README.md or data/README.md"
 echo "===================================="
+
+# Make sure the script is executable
+chmod +x setup.sh

@@ -16,9 +16,10 @@ export const useTorProxyManager = (
     
     const torLogInterval = setInterval(() => {
       const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      const progress = Math.min(100, Math.floor(Math.random() * 100));
       
       appendToTorProxyLog([
-        `[${timestamp}] [info] Bootstrapping Tor network: ${Math.min(100, Math.floor(Math.random() * 100))}%`
+        `[${timestamp}] [info] Bootstrapping Tor network: ${progress}%`
       ]);
       
     }, 1500);
