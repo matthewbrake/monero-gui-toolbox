@@ -4,15 +4,116 @@ import { toast } from '@/hooks/use-toast';
 import { MoneroConfig, ConnectionTestResult } from '../../types/monero';
 import { defaultConnectionTestResults } from '../config/defaultConfigs';
 
-export const useConnectivityTesting = (config: MoneroConfig, isRunning: boolean) => {
+export const useConnectivityTesting = (
+  config: MoneroConfig,
+  isRunning: boolean
+) => {
   const [connectionTestResults, setConnectionTestResults] = useState<ConnectionTestResult>(defaultConnectionTestResults);
 
-  const checkPortStatus = async (type: 'tor' | 'i2p' | 'monero'): Promise<void> => {
+  const testConnectivity = async () => {
     try {
-      // In a real app, this would use port scanning techniques
-      // For this demo, we'll simulate port checking
+      if (!isRunning) {
+        toast({
+          variant: "destructive",
+          title: "Daemon Not Running",
+          description: "The Monero daemon must be running to test connectivity.",
+        });
+        return;
+      }
+
+      toast({
+        title: "Testing Connectivity",
+        description: "Running connectivity tests. This may take a moment...",
+      });
+
+      // Simulate testing RPC connectivity
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setConnectionTestResults(prev => ({
+        ...prev,
+        rpcConnectivity: {
+          tested: true,
+          success: true,
+          output: "RPC connection successful on port " + config.rpcBindPort
+        }
+      }));
+
+      // Simulate testing Tor connectivity if enabled
+      if (config.torEnabled) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        setConnectionTestResults(prev => ({
+          ...prev,
+          torConnectivity: {
+            tested: true,
+            success: true,
+            output: "Tor connectivity test successful",
+            additionalTests: {
+              torProject: {
+                success: true,
+                output: "Connection to Tor Project website successful"
+              }
+            }
+          }
+        }));
+      }
+
+      // Simulate testing I2P connectivity if enabled
+      if (config.i2pEnabled) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        setConnectionTestResults(prev => ({
+          ...prev,
+          i2pConnectivity: {
+            tested: true,
+            success: true,
+            output: "I2P connectivity test successful",
+            additionalTests: {
+              i2pSite: {
+                success: true,
+                output: "Connection to I2P project site successful"
+              }
+            }
+          }
+        }));
+      }
+
+      // Check daemon version
+      setConnectionTestResults(prev => ({
+        ...prev,
+        daemonVersion: {
+          checked: true,
+          current: "v0.18.3.1",
+          latest: "v0.18.3.1",
+          needsUpdate: false
+        }
+      }));
+
+      toast({
+        title: "Connectivity Tests Complete",
+        description: "All connectivity tests have completed successfully.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Connectivity Test Error",
+        description: error instanceof Error ? error.message : "Unknown error during connectivity testing",
+      });
+    }
+  };
+
+  const checkPortStatus = async (type: 'tor' | 'i2p' | 'monero') => {
+    try {
+      toast({
+        title: "Checking Port",
+        description: `Checking ${type} port status...`,
+      });
+
+      // Simulate port check
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       let port = '';
+      
       switch (type) {
         case 'tor':
           port = config.torSocksPort;
@@ -21,36 +122,41 @@ export const useConnectivityTesting = (config: MoneroConfig, isRunning: boolean)
           port = config.i2pSamPort;
           break;
         case 'monero':
-          port = config.rpcBindPort;
+          port = config.p2pBindPort;
           break;
       }
       
-      // Simulate port checking (in a real app, this would use something like netstat)
-      const portOpen = Math.random() > 0.2; // 80% chance port is open for demo
+      const isOpen = Math.random() > 0.3; // 70% chance of success for demo
       
       setConnectionTestResults(prev => ({
         ...prev,
         portStatus: {
           ...prev.portStatus,
-          [type]: { 
-            checked: true, 
-            open: portOpen,
-            port
+          [type]: {
+            checked: true,
+            open: isOpen,
+            port: port
           }
         }
       }));
-
-      toast({
-        title: portOpen ? "Port is open" : "Port is closed",
-        description: `${type.toUpperCase()} port ${port} is ${portOpen ? 'open' : 'closed'}`,
-        variant: portOpen ? "default" : "destructive",
-      });
+      
+      if (isOpen) {
+        toast({
+          title: "Port Check Complete",
+          description: `Port ${port} is open and accessible.`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Port Check Complete",
+          description: `Port ${port} appears to be closed or blocked.`,
+        });
+      }
     } catch (error) {
-      console.error(`Error checking ${type} port:`, error);
       toast({
         variant: "destructive",
-        title: `Error checking ${type} port`,
-        description: error instanceof Error ? error.message : "Unknown error",
+        title: "Port Check Error",
+        description: error instanceof Error ? error.message : "Unknown error during port check",
       });
     }
   };
@@ -60,167 +166,34 @@ export const useConnectivityTesting = (config: MoneroConfig, isRunning: boolean)
     output: string;
   }> => {
     try {
-      // This would actually run the RPC command via the appropriate proxy
-      // For demo purposes, we'll just simulate a response
+      // Simulate RPC command execution
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Prepare sample RPC responses
-      const responses = {
-        clearnet: {
+      const success = Math.random() > 0.2; // 80% chance of success
+      
+      if (success) {
+        return {
           success: true,
-          output: `{"id":"0","jsonrpc":"2.0","result":{"adjusted_time":1647369668,"alt_blocks_count":1,"block_size_limit":600000,"block_size_median":300000,"block_weight_limit":600000,"block_weight_median":300000,"bootstrap_daemon_address":"","cumulative_difficulty":140859307051017,"cumulative_difficulty_top64":0,"database_size":35689701376,"difficulty":252793953,"difficulty_top64":0,"free_space":107369672704,"grey_peerlist_size":4999,"height":2571371,"height_without_bootstrap":2571371,"incoming_connections_count":37,"mainnet":true,"nettype":"mainnet","offline":false,"outgoing_connections_count":12,"rpc_connections_count":1,"stagenet":false,"start_time":1647296168,"status":"OK","target":120,"target_height":2571352,"testnet":false,"top_block_hash":"cc4b14cf15a30e29eff200e1f8946e9f7b08825ef23b1f06536c12758a7f6836","top_hash":"cc4b14cf15a30e29eff200e1f8946e9f7b08825ef23b1f06536c12758a7f6836","tx_count":17331736,"tx_pool_size":12,"untrusted":false,"was_bootstrap_ever_used":false,"white_peerlist_size":1000}}`,
-        },
-        tor: {
-          success: true,
-          output: `{"id":"0","jsonrpc":"2.0","result":{"adjusted_time":1647369673,"alt_blocks_count":1,"block_size_limit":600000,"block_size_median":300000,"block_weight_limit":600000,"block_weight_median":300000,"bootstrap_daemon_address":"","cumulative_difficulty":140859307051017,"cumulative_difficulty_top64":0,"database_size":35689701376,"difficulty":252793953,"difficulty_top64":0,"free_space":107369672704,"grey_peerlist_size":4999,"height":2571371,"height_without_bootstrap":2571371,"incoming_connections_count":37,"mainnet":true,"nettype":"mainnet","offline":false,"outgoing_connections_count":12,"rpc_connections_count":1,"stagenet":false,"start_time":1647296168,"status":"OK","target":120,"target_height":2571352,"testnet":false,"top_block_hash":"cc4b14cf15a30e29eff200e1f8946e9f7b08825ef23b1f06536c12758a7f6836","top_hash":"cc4b14cf15a30e29eff200e1f8946e9f7b08825ef23b1f06536c12758a7f6836","tx_count":17331736,"tx_pool_size":12,"untrusted":false,"was_bootstrap_ever_used":false,"white_peerlist_size":1000}}`,
-        },
-        i2p: {
-          success: true,
-          output: `{"id":"0","jsonrpc":"2.0","result":{"adjusted_time":1647369679,"alt_blocks_count":1,"block_size_limit":600000,"block_size_median":300000,"block_weight_limit":600000,"block_weight_median":300000,"bootstrap_daemon_address":"","cumulative_difficulty":140859307051017,"cumulative_difficulty_top64":0,"database_size":35689701376,"difficulty":252793953,"difficulty_top64":0,"free_space":107369672704,"grey_peerlist_size":4999,"height":2571371,"height_without_bootstrap":2571371,"incoming_connections_count":37,"mainnet":true,"nettype":"mainnet","offline":false,"outgoing_connections_count":12,"rpc_connections_count":1,"stagenet":false,"start_time":1647296168,"status":"OK","target":120,"target_height":2571352,"testnet":false,"top_block_hash":"cc4b14cf15a30e29eff200e1f8946e9f7b08825ef23b1f06536c12758a7f6836","top_hash":"cc4b14cf15a30e29eff200e1f8946e9f7b08825ef23b1f06536c12758a7f6836","tx_count":17331736,"tx_pool_size":12,"untrusted":false,"was_bootstrap_ever_used":false,"white_peerlist_size":1000}}`,
-        },
-      };
-      
-      // Additional test information for secondary tests
-      const additionalTests = {
-        tor: {
-          torProject: {
-            success: Math.random() > 0.2, // 80% chance success for demo
-            output: "Congratulations. This browser is configured to use Tor."
-          }
-        },
-        i2p: {
-          i2pSite: {
-            success: Math.random() > 0.2, // 80% chance success for demo
-            output: "Successfully connected to I2P network and retrieved test page."
-          }
-        }
-      };
-      
-      // Simulate success/failure (90% success rate for demo)
-      const success = Math.random() > 0.1;
-      let output = success ? responses[proxyType].output : "Error: Connection failed";
-      
-      // Update connection test results
-      if (proxyType === 'tor') {
-        setConnectionTestResults(prev => ({
-          ...prev,
-          torConnectivity: { 
-            tested: true, 
-            success: success,
-            output: output,
-            additionalTests: additionalTests.tor
-          }
-        }));
-      } else if (proxyType === 'i2p') {
-        setConnectionTestResults(prev => ({
-          ...prev,
-          i2pConnectivity: { 
-            tested: true, 
-            success: success,
-            output: output,
-            additionalTests: additionalTests.i2p
-          }
-        }));
+          output: `Successfully executed test command via ${proxyType}`
+        };
       } else {
-        setConnectionTestResults(prev => ({
-          ...prev,
-          rpcConnectivity: { 
-            tested: true, 
-            success: success,
-            output: output
-          }
-        }));
+        return {
+          success: false,
+          output: `Failed to execute command via ${proxyType}: Connection timed out`
+        };
       }
-      
-      return { success, output };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      console.error(`Error testing RPC over ${proxyType}:`, error);
-      return { success: false, output: errorMessage };
+      return {
+        success: false,
+        output: `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+      };
     }
-  };
-
-  const testConnectivity = async () => {
-    // Reset all test results
-    setConnectionTestResults({
-      torConnectivity: { tested: false },
-      i2pConnectivity: { tested: false },
-      rpcConnectivity: { tested: false },
-      daemonVersion: { checked: false },
-      portStatus: {
-        tor: { checked: false },
-        i2p: { checked: false },
-        monero: { checked: false }
-      }
-    });
-    
-    // Only test if daemon is running
-    if (!isRunning) {
-      toast({
-        variant: "destructive",
-        title: "Test Failed",
-        description: "Daemon must be running to test connectivity.",
-      });
-      return;
-    }
-
-    toast({
-      title: "Testing Connections",
-      description: "Running connectivity tests...",
-    });
-    
-    // Check port status
-    await checkPortStatus('monero');
-    if (config.torEnabled) await checkPortStatus('tor');
-    if (config.i2pEnabled) await checkPortStatus('i2p');
-    
-    // Test RPC with clearnet
-    await testRpcCommand('clearnet');
-    
-    // Test RPC over Tor if enabled
-    if (config.torEnabled) {
-      await testRpcCommand('tor');
-    }
-
-    // Test RPC over I2P if enabled
-    if (config.i2pEnabled) {
-      await testRpcCommand('i2p');
-    }
-
-    // Check daemon version
-    try {
-      const { checkDaemonVersion } = await import('../../utils/moneroUtils');
-      const result = await checkDaemonVersion();
-      setConnectionTestResults(prev => ({
-        ...prev,
-        daemonVersion: { 
-          checked: true, 
-          current: result.current, 
-          latest: result.latest, 
-          needsUpdate: result.needsUpdate 
-        }
-      }));
-    } catch (error) {
-      setConnectionTestResults(prev => ({
-        ...prev,
-        daemonVersion: { 
-          checked: true, 
-          current: "Unknown", 
-          latest: "Unknown", 
-          needsUpdate: false 
-        }
-      }));
-    }
-
-    toast({
-      title: "Tests Completed",
-      description: "Connectivity tests have completed.",
-    });
   };
 
   return {
     connectionTestResults,
-    checkPortStatus,
     testConnectivity,
+    checkPortStatus,
     testRpcCommand
   };
 };
