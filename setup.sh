@@ -2,7 +2,7 @@
 #!/bin/bash
 
 # Monero Suite Setup Script
-# This script creates the necessary directory structure and template configurations
+# Creates the necessary directory structure and template configurations
 
 echo "===================================="
 echo "Monero Suite - Setup Script"
@@ -37,7 +37,7 @@ fi
 # Set proper permissions
 chmod -R 755 data
 
-# Create a simple README in the data directory
+# Create a README in the data directory with clear instructions
 cat > data/README.md << 'EOF'
 # Monero Suite Data Directory
 
@@ -107,5 +107,5 @@ echo ""
 echo "For more information, see README.md or data/README.md"
 echo "===================================="
 
-# Make sure the script is executable
+# Make the script executable
 chmod +x setup.sh

@@ -48,10 +48,7 @@ export const useTorProxyManager = (
     if (torProxyRunning) return;
     
     try {
-      // This would actually launch the Tor process using the command:
-      // config.torPath --config config.torrcPath --DataDirectory config.torDataPath --Log "notice file config.torLogPath"
-      
-      // For now, we'll just simulate startup
+      // This would actually launch the Tor process
       setTorProxyRunning(true);
       
       appendToTorProxyLog([

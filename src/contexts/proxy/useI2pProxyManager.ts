@@ -16,9 +16,10 @@ export const useI2pProxyManager = (
     
     const i2pLogInterval = setInterval(() => {
       const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      const progress = Math.min(100, Math.floor(Math.random() * 100));
       
       appendToI2pProxyLog([
-        `[${timestamp}] * Starting I2P router: initialization ${Math.min(100, Math.floor(Math.random() * 100))}%`
+        `[${timestamp}] * Starting I2P router: initialization ${progress}%`
       ]);
       
     }, 1500);
@@ -47,10 +48,7 @@ export const useI2pProxyManager = (
     if (i2pProxyRunning) return;
     
     try {
-      // This would actually launch the I2P process using the command:
-      // config.i2pPath --datadir=config.i2pDataPath --conf=config.i2pConfigPath --tunconf=config.i2pTunnelsPath --log=config.i2pLogPath
-      
-      // For now, we'll just simulate startup
+      // This would actually launch the I2P process
       setI2pProxyRunning(true);
       
       appendToI2pProxyLog([
