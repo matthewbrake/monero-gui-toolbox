@@ -38,6 +38,7 @@ export interface MoneroConfig {
   confirmExternalBind: boolean;
   rpcPaymentAllowFreeLoopback: boolean;
   publicNode: boolean;
+  disableRpcBan: boolean;
   
   // P2P settings
   p2pBindIp: string;
