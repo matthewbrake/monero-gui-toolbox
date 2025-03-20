@@ -70,7 +70,7 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Create a compatible wrapper for checkPortStatus function
   const checkPortStatus = async (port: number, service: string) => {
-    await checkPort(port, service);
+    return await checkPort(port, service);
   };
 
   return (

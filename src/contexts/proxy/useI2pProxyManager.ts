@@ -6,7 +6,7 @@ import { toast } from '@/hooks/use-toast';
 export const useI2pProxyManager = (
   config: MoneroConfig, 
   setConfig: (config: MoneroConfig | ((prev: MoneroConfig) => MoneroConfig)) => void,
-  appendToI2pProxyLog: (log: string) => void
+  appendToI2pProxyLog: (log: string[]) => void
 ) => {
   const [i2pProxyRunning, setI2pProxyRunning] = useState(false);
   
@@ -28,7 +28,7 @@ export const useI2pProxyManager = (
   const startI2PProxy = async () => {
     try {
       // This would actually start I2P in a real implementation
-      appendToI2pProxyLog('Starting I2P proxy...');
+      appendToI2pProxyLog(['Starting I2P proxy...']);
       
       // Simulate delay for starting I2P
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -43,14 +43,14 @@ export const useI2pProxyManager = (
         i2pAddress: i2pAddress
       }));
       
-      appendToI2pProxyLog(`I2P started successfully. I2P address: ${i2pAddress}`);
+      appendToI2pProxyLog([`I2P started successfully. I2P address: ${i2pAddress}`]);
       
       toast({
         title: "I2P Proxy Started",
         description: "I2P proxy is now running.",
       });
     } catch (error) {
-      appendToI2pProxyLog(`Error starting I2P: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      appendToI2pProxyLog([`Error starting I2P: ${error instanceof Error ? error.message : 'Unknown error'}`]);
       
       toast({
         variant: "destructive",
@@ -63,21 +63,21 @@ export const useI2pProxyManager = (
   const stopI2PProxy = async () => {
     try {
       // This would actually stop I2P in a real implementation
-      appendToI2pProxyLog('Stopping I2P proxy...');
+      appendToI2pProxyLog(['Stopping I2P proxy...']);
       
       // Command to stop I2P would go here
       // For demo purposes, simulate a delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setI2pProxyRunning(false);
-      appendToI2pProxyLog('I2P proxy stopped successfully.');
+      appendToI2pProxyLog(['I2P proxy stopped successfully.']);
       
       toast({
         title: "I2P Proxy Stopped",
         description: "I2P proxy has been shut down.",
       });
     } catch (error) {
-      appendToI2pProxyLog(`Error stopping I2P: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      appendToI2pProxyLog([`Error stopping I2P: ${error instanceof Error ? error.message : 'Unknown error'}`]);
       
       toast({
         variant: "destructive",

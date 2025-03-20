@@ -7,14 +7,14 @@ export interface MoneroConfig {
   blockchainPath: string;
   configPath: string;
   logPath: string;
-  dataDir?: string;
-  torrcPath?: string;
-  torDataPath?: string;
-  torLogPath?: string;
-  i2pDataPath?: string;
-  i2pConfigPath?: string;
-  i2pTunnelsPath?: string;
-  i2pLogPath?: string;
+  dataDir: string;
+  torrcPath: string;
+  torDataPath: string;
+  torLogPath: string;
+  i2pDataPath: string;
+  i2pConfigPath: string;
+  i2pTunnelsPath: string;
+  i2pLogPath: string;
   banList?: string;
   
   // Network settings
@@ -31,20 +31,20 @@ export interface MoneroConfig {
   torEnabled: boolean;
   torProxyIp: string;
   torProxyPort: number;
-  torSocksPort?: number;
-  anonymousInboundTor?: string;
+  torSocksPort: number;
   torOnionAddress?: string;
   torOnly?: boolean;
   txProxy?: string;
+  anonymousInboundTor?: string;
   
   i2pEnabled: boolean;
   i2pProxyIp: string;
   i2pProxyPort: number;
-  i2pSamPort?: number;
+  i2pSamPort: number;
   i2pProxy?: string;
-  anonymousInboundI2p?: string;
   i2pAddress?: string;
   i2pOnly?: boolean;
+  anonymousInboundI2p?: string;
   
   // Advanced settings
   limitRate: boolean;
@@ -55,14 +55,14 @@ export interface MoneroConfig {
   maxConcurrentConnections?: number;
   
   // ZMQ settings
-  zmqEnabled?: boolean;
-  zmqBindIp?: string;
-  zmqPubPort?: number;
-  zmqPort?: number;
+  zmqEnabled: boolean;
+  zmqBindIp: string;
+  zmqPubPort: number;
+  zmqPort: number;
   noZmq?: boolean;
   
   // RPC settings
-  rpcEnabled?: boolean;
+  rpcEnabled: boolean;
   restrictRpc?: boolean;
   publicNode?: boolean;
   rpcLogin?: string;
@@ -74,12 +74,12 @@ export interface MoneroConfig {
   
   // Flags
   pruningEnabled: boolean;
-  pruning?: boolean;
+  pruning: boolean;
   pruningSize?: number;
   pruneSize?: number;
   syncPrunedBlocks?: boolean;
   offlineMode: boolean;
-  offline?: boolean;
+  offline: boolean;
   disableIPv6: boolean;
   detach: boolean;
   syncMode: 'normal' | 'safe' | 'fast';
@@ -98,7 +98,7 @@ export interface MoneroConfig {
   addExclusiveNode?: string;
   
   // Log settings
-  logLevel?: number;
+  logLevel: number;
   noConsoleLog?: boolean;
   maxLogFileSize?: number | string;
   maxLogFiles?: number | string;
@@ -138,7 +138,7 @@ export interface ConnectionTestResult {
   status: 'open' | 'closed' | 'timeout' | 'error';
   message: string;
   timestamp: string;
-  portStatus?: 'open' | 'closed' | 'timeout' | 'error';
+  portStatus: 'open' | 'closed' | 'timeout' | 'error';
   rpcConnectivity?: boolean;
   torConnectivity?: boolean;
   i2pConnectivity?: boolean;
@@ -193,6 +193,6 @@ export interface MoneroContextType {
   // Connectivity testing
   testConnectivity: () => Promise<void>;
   connectionTestResults: ConnectionTestResult[];
-  checkPortStatus: (port: number, service: string) => Promise<void>;
+  checkPortStatus: (port: number, service: string) => Promise<ConnectionTestResult>;
   testRpcCommand: (command: string, params?: any) => Promise<RpcCommandResult>;
 }

@@ -2,9 +2,10 @@
 import { useState } from 'react';
 import { MoneroConfig, ConnectionTestResult, RpcCommandResult } from '../../types/monero';
 import { toast } from '@/hooks/use-toast';
+import { defaultConnectionTestResults } from '../config/defaultConfigs';
 
 export const useConnectivityTesting = (config: MoneroConfig, isRunning: boolean) => {
-  const [connectionTestResults, setConnectionTestResults] = useState<ConnectionTestResult[]>([]);
+  const [connectionTestResults, setConnectionTestResults] = useState<ConnectionTestResult[]>(defaultConnectionTestResults);
 
   const testConnectivity = async () => {
     // Clear previous results
@@ -33,7 +34,7 @@ export const useConnectivityTesting = (config: MoneroConfig, isRunning: boolean)
     });
   };
 
-  const checkPort = async (port: number, service: string) => {
+  const checkPort = async (port: number, service: string): Promise<ConnectionTestResult> => {
     try {
       // In a real app, this would perform an actual port check
       // For this demo, we'll simulate results
