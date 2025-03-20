@@ -171,27 +171,15 @@ const DaemonConfigTab: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="max-concurrency">Max Concurrency</Label>
+                  <Label htmlFor="log-level">Log Level</Label>
                   <Input
-                    id="max-concurrency"
-                    type="number"
-                    value={config.maxConcurrency}
-                    onChange={(e) => handleConfigChange('maxConcurrency', e.target.value)}
-                    placeholder="4"
+                    id="log-level"
+                    value={config.logLevel}
+                    onChange={(e) => handleConfigChange('logLevel', e.target.value)}
+                    placeholder="0"
                   />
-                  <p className="text-xs text-muted-foreground">Set to 0 to use number of CPU threads</p>
+                  <p className="text-xs text-muted-foreground">Log level (0-4, higher = more verbose)</p>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="log-level">Log Level</Label>
-                <Input
-                  id="log-level"
-                  value={config.logLevel}
-                  onChange={(e) => handleConfigChange('logLevel', e.target.value)}
-                  placeholder="0"
-                />
-                <p className="text-xs text-muted-foreground">Log level (0-4, higher = more verbose)</p>
               </div>
 
               <Separator />
@@ -289,8 +277,8 @@ const DaemonConfigTab: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="disable-dns-checkpoints"
-                        checked={config.disableCheckpoints}
-                        onCheckedChange={() => toggleSwitch('disableCheckpoints')}
+                        checked={config.disableDnsCheckpoints}
+                        onCheckedChange={() => toggleSwitch('disableDnsCheckpoints')}
                       />
                       <Label htmlFor="disable-dns-checkpoints">Disable DNS Checkpoints</Label>
                     </div>
@@ -505,25 +493,6 @@ const DaemonConfigTab: React.FC = () => {
 
               <Separator />
               
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="rpc-section">RPC Settings</Label>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="disable-rpc-ban"
-                      checked={config.disableRpcBan || false}
-                      onCheckedChange={() => toggleSwitch('disableRpcBan')}
-                    />
-                    <Label htmlFor="disable-rpc-ban">Disable RPC Ban</Label>
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-7">
-                    Disable automatic IP banning on RPC interface
-                  </p>
-                </div>
-              </div>
-
-              <Separator />
-              
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <Terminal className="h-5 w-5 text-amber-400" />
@@ -556,14 +525,12 @@ const DaemonConfigTab: React.FC = () => {
                       {config.p2pBindPort ? ` --p2p-bind-port=${config.p2pBindPort}` : ''}
                       {config.zmqPort ? ` --zmq-pub tcp://127.0.0.1:${config.zmqPort}` : ''}
                       {config.maxConcurrentConnections ? ` --rpc-max-concurrency=${config.maxConcurrentConnections}` : ''}
-                      {config.maxConcurrency ? ` --max-concurrency=${config.maxConcurrency}` : ''}
                       {config.logLevel ? ` --log-level=${config.logLevel}` : ''}
-                      {config.disableRpcBan ? ` --no-igd` : ''}
                       {config.torEnabled ? ` --tx-proxy=tor,${config.torSocksPort || '9050'},10` : ''}
                       {config.anonymousInboundTor ? ` --anonymous-inbound=${config.anonymousInboundTor},127.0.0.1,2` : ''}
                       {config.i2pEnabled ? ` --tx-proxy=i2p,${config.i2pSamPort || '7656'},10` : ''}
                       {config.anonymousInboundI2p ? ` --anonymous-inbound=${config.anonymousInboundI2p},127.0.0.1,3` : ''}
-                      {config.disableCheckpoints ? ' --no-dns' : ''}
+                      {config.disableDnsCheckpoints ? ' --no-dns' : ''}
                       {config.noIgd ? ' --no-igd' : ''}
                       {config.addPeer ? ` --add-peer=${config.addPeer}` : ''}
                       {config.seedNode ? ` --seed-node=${config.seedNode}` : ''}
@@ -574,7 +541,6 @@ const DaemonConfigTab: React.FC = () => {
                       {config.pruning && config.pruneSize ? ` --prune-blockchain-size=${config.pruneSize}` : ''}
                       {config.fastSync ? ' --fast-block-sync=1' : ''}
                       {config.offline ? ' --offline' : ''}
-                      {config.disableRpcBan ? ' --no-rpc-ban' : ''}
                       {config.extraArgs ? ` ${config.extraArgs}` : ''}
                     </pre>
                   </ScrollArea>

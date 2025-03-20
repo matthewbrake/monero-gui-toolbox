@@ -1,174 +1,137 @@
 
-import { MoneroConfig, StatusInfo, ConnectionTestResult } from '../../types/monero';
+import { MoneroConfig, ConnectionTestResult, LogData, StatusInfo } from '../../types/monero';
 
 export const defaultConfig: MoneroConfig = {
-  // Paths
-  moneroPath: "./monero/bin/monerod",
-  blockchainPath: "./blockchain",
-  configPath: "./monero.conf",
-  logPath: "./monero.log",
-  dataDir: "./data",
-  torPath: "./tor/tor",
-  torrcPath: "./tor/config/torrc",
-  torDataPath: "./tor/data",
-  torLogPath: "./tor/logs/debug.log",
-  i2pPath: "./i2p/i2pd",
-  i2pDataPath: "./i2p/data",
-  i2pConfigPath: "./i2p/config/i2pd.conf",
-  i2pTunnelsPath: "./i2p/config/tunnels.conf",
-  i2pLogPath: "./i2p/logs/i2pd.log",
-  banList: "",
+  // General/Basic settings
+  moneroPath: './bin/monerod',
+  dataDir: './blockchain',
+  logLevel: 0,
+  noConsoleLog: false,
+  maxLogFileSize: '104850000',
+  maxLogFiles: '50',
   
-  // Network settings
-  networkType: 'mainnet',
+  // Checkpoints and security
+  enforceCheckpoints: true,
+  disableCheckpoints: false,
+  banList: '',
+  enableDnsBlocklist: true,
   
-  // Node settings
-  p2pBindIp: "0.0.0.0",
-  p2pBindPort: 18080,
-  rpcBindIp: "127.0.0.1",
-  rpcBindPort: 18081,
-  p2pExternalPort: 18080,
-  
-  // Proxy settings
-  torEnabled: false,
-  torProxyIp: "127.0.0.1",
-  torProxyPort: 9050,
-  torSocksPort: 9050,
-  torOnionAddress: "",
-  torOnly: false,
-  txProxy: "tor,127.0.0.1:9050,10",
-  anonymousInboundTor: "",
-  
-  i2pEnabled: false,
-  i2pProxyIp: "127.0.0.1",
-  i2pProxyPort: 4444,
-  i2pSamPort: 7656,
-  i2pProxy: "i2p,127.0.0.1:4447",
-  i2pAddress: "",
-  i2pOnly: false,
-  anonymousInboundI2p: "",
-  
-  // Advanced settings
-  limitRate: 2048,  // Changed from boolean to number
-  limitRateUp: 2048,
-  limitRateDown: 8192,
-  disableRpcBan: false,
-  maxConcurrency: 0,
-  maxConcurrentConnections: 0,
-  
-  // ZMQ settings
-  zmqEnabled: false,
-  zmqBindIp: "127.0.0.1",
-  zmqPubPort: 18082,
-  zmqPort: 18082,
-  noZmq: false,
+  // Blockchain settings
+  pruning: false,
+  pruningSize: '1000',
+  syncPrunedBlocks: false,
+  blockSyncSize: '10',
+  fastBlockSync: true,
+  checkUpdates: 'enabled',
+  useBootstrapDaemon: false,
+  bootstrapDaemonAddress: '',
+  dbSyncMode: 'fast',
   
   // RPC settings
   rpcEnabled: true,
-  restrictRpc: false,
-  publicNode: false,
-  rpcLogin: "",
+  rpcBindIp: '127.0.0.1',
+  rpcBindPort: '18081',
+  restrictRpc: true,
+  rpcLogin: '',
   rpcSsl: false,
-  rpcSslCert: "",
-  rpcSslKey: "",
+  rpcSslCert: '',
+  rpcSslKey: '',
   confirmExternalBind: false,
   rpcPaymentAllowFreeLoopback: true,
+  publicNode: false,
   
-  // Flags
-  pruningEnabled: false,
-  pruning: false,
-  pruningSize: 1000,
-  pruneSize: 1000,
-  syncPrunedBlocks: false,
-  offlineMode: false,
-  offline: false,
-  disableIPv6: false,
-  detach: false,
-  syncMode: 'normal',
-  fastSync: false,
-  fastBlockSync: false,
-  
-  // Peer settings
-  outPeers: 12,
-  inPeers: -1,
+  // P2P settings
+  p2pBindIp: '0.0.0.0',
+  p2pBindPort: '18080',
+  p2pExternalPort: '18080',
   hideMyPort: false,
   noIgd: false,
+  offline: false,
   allowLocalIp: false,
-  addPeer: "",
-  seedNode: "",
-  addPriorityNode: "",
-  addExclusiveNode: "",
+  limitRate: '',
+  limitRateUp: '2048',
+  limitRateDown: '8192',
+  outPeers: '12',
+  inPeers: '-1',
+  addPriorityNode: '',
+  addExclusiveNode: '',
+  seedNode: '',
   
-  // Log settings
-  logLevel: 0,
-  noConsoleLog: false,
-  maxLogFileSize: 104850000,
-  maxLogFiles: 50,
+  // Tor settings
+  torEnabled: false,
+  torPath: './tor/tor.exe',
+  torrcPath: './tor/torrc',
+  torDataPath: './tor/data',
+  torLogPath: './tor/logs/tor.log',
+  torSocksPort: '9050',
+  txProxy: 'tor,127.0.0.1:9050,10',
+  torOnly: false,
+  anonymousInboundTor: '',
+  torOnionAddress: '',
+  padTransactions: false,
   
-  // Blockchain settings
-  blockSyncSize: 10,
-  dbSyncMode: "fast",
-  enforceCheckpoints: true,
-  disableCheckpoints: false,
-  enableDnsBlocklist: true,
+  // I2P settings
+  i2pEnabled: false,
+  i2pPath: './i2p/i2p.exe',
+  i2pDataPath: './i2p/data',
+  i2pConfigPath: './i2p/config/i2pd.conf',
+  i2pTunnelsPath: './i2p/config/tunnels.conf',
+  i2pLogPath: './i2p/logs/i2pd.log',
+  i2pSamPort: '7656',
+  i2pProxy: 'i2p,127.0.0.1:4447',
+  anonymousInboundI2p: '',
+  i2pOnly: false,
+  i2pAddress: '',
   
-  // Bootstrap settings
-  useBootstrapDaemon: false,
-  bootstrapDaemonAddress: "",
-  checkUpdates: "enabled",
+  // ZMQ settings
+  zmqEnabled: false,
+  zmqBindIp: '127.0.0.1',
+  zmqPubPort: '18082',
+  noZmq: true,
   
-  // Extra args
-  extraArgs: "",
-  
-  // Additional settings
-  padTransactions: false
+  // Miscellaneous
+  maxConcurrency: '4',
+};
+
+export const defaultConnectionTestResults: ConnectionTestResult = {
+  torConnectivity: { 
+    tested: false,
+    additionalTests: {
+      torProject: {
+        success: false,
+        output: ""
+      }
+    }
+  },
+  i2pConnectivity: { 
+    tested: false,
+    additionalTests: {
+      i2pSite: {
+        success: false,
+        output: ""
+      }
+    }
+  },
+  rpcConnectivity: { tested: false },
+  daemonVersion: { checked: false },
+  portStatus: {
+    tor: { checked: false },
+    i2p: { checked: false },
+    monero: { checked: false }
+  }
 };
 
 export const defaultStatusInfo: StatusInfo = {
   blockHeight: 0,
+  networkHashrate: '0 H/s',
   connections: 0,
-  networkHashrate: 0,
-  miningStatus: false,
   syncStatus: 0,
-  version: "Unknown",
-  uptime: 0
+  version: 'v0.18.2.2',
 };
 
-export const defaultConnectionTestResults: ConnectionTestResult[] = [
-  {
-    port: 18080,
-    service: "P2P Network",
-    status: "closed",
-    portStatus: "closed",
-    message: "Not tested",
-    timestamp: new Date().toISOString(),
-    rpcConnectivity: false,
-    torConnectivity: false,
-    i2pConnectivity: false,
-    daemonVersion: ""
-  },
-  {
-    port: 18081,
-    service: "RPC Interface",
-    status: "closed",
-    portStatus: "closed",
-    message: "Not tested",
-    timestamp: new Date().toISOString(),
-    rpcConnectivity: false,
-    torConnectivity: false,
-    i2pConnectivity: false,
-    daemonVersion: ""
-  },
-  {
-    port: 18082,
-    service: "ZMQ Interface",
-    status: "closed",
-    portStatus: "closed",
-    message: "Not tested",
-    timestamp: new Date().toISOString(),
-    rpcConnectivity: false,
-    torConnectivity: false,
-    i2pConnectivity: false,
-    daemonVersion: ""
-  }
-];
+export const defaultLogs: LogData = {
+  console: [],
+  logFile: [],
+  torProxy: [],
+  i2pProxy: []
+};

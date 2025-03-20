@@ -1,13 +1,12 @@
 
 import React, { createContext, useContext, useState } from 'react';
-import { MoneroConfig, MoneroContextType, ConnectionTestResult, RpcCommandResult } from '../types/monero';
+import { MoneroContextType } from '../types/monero';
 import { useLogsManager } from './logs/useLogsManager';
 import { useConfigManager } from './config/useConfigManager';
 import { useMoneroManager } from './monero/useMoneroManager';
 import { useTorProxyManager } from './proxy/useTorProxyManager';
 import { useI2pProxyManager } from './proxy/useI2pProxyManager';
 import { useConnectivityTesting } from './connectivity/useConnectivityTesting';
-import { defaultConnectionTestResults } from './config/defaultConfigs';
 
 export const MoneroContext = createContext<MoneroContextType | undefined>(undefined);
 
@@ -57,8 +56,8 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   const { 
     connectionTestResults, 
+    checkPortStatus, 
     testConnectivity,
-    checkPort,
     testRpcCommand
   } = useConnectivityTesting(config, isRunning);
 
@@ -95,7 +94,7 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         showBinaryConfig,
         setShowBinaryConfig,
         testPaths,
-        checkPortStatus: checkPort,
+        checkPortStatus,
         refreshLogs,
         testRpcCommand
       }}

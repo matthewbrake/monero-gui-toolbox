@@ -4,11 +4,7 @@ import { toast } from '@/hooks/use-toast';
 import { MoneroConfig, StatusInfo } from '../../types/monero';
 import { defaultStatusInfo } from '../config/defaultConfigs';
 
-export const useMoneroManager = (
-  config: MoneroConfig, 
-  appendToConsoleLog: (logs: string[]) => void, 
-  appendToLogFile: (logs: string[]) => void
-) => {
+export const useMoneroManager = (config: MoneroConfig, appendToConsoleLog: (logs: string[]) => void, appendToLogFile: (logs: string[]) => void) => {
   const [isRunning, setIsRunning] = useState(false);
   const [statusInfo, setStatusInfo] = useState<StatusInfo>(defaultStatusInfo);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -97,19 +93,21 @@ export const useMoneroManager = (
   const downloadLatestDaemon = async (platform: 'windows' | 'linux'): Promise<void> => {
     setIsDownloading(true);
     try {
-      // Simulate downloading
-      toast({
-        title: "Download Started",
-        description: `Downloading Monero daemon for ${platform}...`,
-      });
+      const { downloadLatestDaemon } = await import('../../utils/moneroUtils');
+      const result = await downloadLatestDaemon(platform);
       
-      // Simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      toast({
-        title: "Download Complete",
-        description: "Monero daemon downloaded successfully.",
-      });
+      if (result.success) {
+        toast({
+          title: "Download Complete",
+          description: result.message,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Download Failed",
+          description: result.message,
+        });
+      }
     } catch (error) {
       toast({
         variant: "destructive",

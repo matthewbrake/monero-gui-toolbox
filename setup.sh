@@ -2,7 +2,7 @@
 #!/bin/bash
 
 # Monero Suite Setup Script
-# Creates the necessary directory structure and template configurations
+# This script creates the necessary directory structure and template configurations
 
 echo "===================================="
 echo "Monero Suite - Setup Script"
@@ -10,19 +10,6 @@ echo "===================================="
 echo "This script will create the recommended directory structure"
 echo "and copy template configuration files for Monero Suite."
 echo ""
-
-# Check for Docker and Docker Compose
-if ! command -v docker &> /dev/null; then
-    echo "⚠️ Docker is not installed. Please install Docker before proceeding."
-    echo "   Visit https://docs.docker.com/get-docker/ for installation instructions."
-    exit 1
-fi
-
-if ! command -v docker-compose &> /dev/null; then
-    echo "⚠️ Docker Compose is not installed. Please install it before proceeding."
-    echo "   Visit https://docs.docker.com/compose/install/ for installation instructions."
-    exit 1
-fi
 
 # Create the main data directories
 mkdir -p data/monero/blockchain data/monero/logs data/monero/configs data/monero/bin/linux data/monero/bin/win
@@ -50,7 +37,7 @@ fi
 # Set proper permissions
 chmod -R 755 data
 
-# Create a README in the data directory with clear instructions
+# Create a simple README in the data directory
 cat > data/README.md << 'EOF'
 # Monero Suite Data Directory
 
