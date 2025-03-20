@@ -1,12 +1,13 @@
 
 import React, { createContext, useContext, useState } from 'react';
-import { MoneroContextType } from '../types/monero';
+import { MoneroConfig, MoneroContextType, ConnectionTestResult, RpcCommandResult } from '../types/monero';
 import { useLogsManager } from './logs/useLogsManager';
 import { useConfigManager } from './config/useConfigManager';
 import { useMoneroManager } from './monero/useMoneroManager';
 import { useTorProxyManager } from './proxy/useTorProxyManager';
 import { useI2pProxyManager } from './proxy/useI2pProxyManager';
 import { useConnectivityTesting } from './connectivity/useConnectivityTesting';
+import { defaultConnectionTestResults } from './config/defaultConfigs';
 
 export const MoneroContext = createContext<MoneroContextType | undefined>(undefined);
 
@@ -56,8 +57,8 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   const { 
     connectionTestResults, 
-    checkPortStatus, 
     testConnectivity,
+    checkPort,
     testRpcCommand
   } = useConnectivityTesting(config, isRunning);
 
@@ -65,6 +66,11 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const handleDownloadLatestDaemon = () => {
     // Default to Linux if platform is not specified
     downloadLatestDaemon('linux');
+  };
+
+  // Create a compatible wrapper for checkPortStatus function
+  const checkPortStatus = async (port: number, service: string) => {
+    await checkPort(port, service);
   };
 
   return (

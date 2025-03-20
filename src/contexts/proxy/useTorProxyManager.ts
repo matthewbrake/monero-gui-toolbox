@@ -1,93 +1,92 @@
 
 import { useState, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
 import { MoneroConfig } from '../../types/monero';
+import { toast } from '@/hooks/use-toast';
 
 export const useTorProxyManager = (
   config: MoneroConfig, 
-  setConfig: React.Dispatch<React.SetStateAction<MoneroConfig>>,
-  appendToTorProxyLog: (logs: string[]) => void
+  setConfig: (config: MoneroConfig | ((prev: MoneroConfig) => MoneroConfig)) => void,
+  appendToTorProxyLog: (log: string) => void
 ) => {
   const [torProxyRunning, setTorProxyRunning] = useState(false);
-
-  // Simulate Tor proxy logs when running
+  
   useEffect(() => {
-    if (!torProxyRunning) return;
+    // In a real implementation, you would check if Tor is already running
+    const checkTorRunning = async () => {
+      try {
+        // This is a placeholder - in a real app, you would check system processes
+        const isRunning = false;
+        setTorProxyRunning(isRunning);
+      } catch (error) {
+        console.error('Error checking Tor status:', error);
+      }
+    };
     
-    const torLogInterval = setInterval(() => {
-      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-      const progress = Math.min(100, Math.floor(Math.random() * 100));
-      
-      appendToTorProxyLog([
-        `[${timestamp}] [info] Bootstrapping Tor network: ${progress}%`
-      ]);
-      
-    }, 1500);
-    
-    // Generate onion address after some time
-    if (torProxyRunning && !config.torOnionAddress) {
-      setTimeout(() => {
-        const generatedAddress = `${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}.onion`;
-        
-        setConfig(prev => ({
-          ...prev,
-          torOnionAddress: generatedAddress
-        }));
-        
-        const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-        appendToTorProxyLog([
-          `[${timestamp}] [notice] Onion address generated: ${generatedAddress}`
-        ]);
-      }, 5000);
-    }
-    
-    return () => clearInterval(torLogInterval);
-  }, [torProxyRunning, config.torOnionAddress, appendToTorProxyLog, setConfig]);
-
-  const startTorProxy = () => {
-    if (torProxyRunning) return;
-    
+    checkTorRunning();
+  }, []);
+  
+  const startTorProxy = async () => {
     try {
-      // This would actually launch the Tor process
+      // This would actually start Tor in a real implementation
+      appendToTorProxyLog('Starting Tor proxy...');
+      
+      // Simulate delay for starting Tor
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Update tor status
       setTorProxyRunning(true);
       
-      appendToTorProxyLog([
-        '[INFO] Starting Tor...',
-        `[INFO] Command: ${config.torPath} --config ${config.torrcPath} --DataDirectory ${config.torDataPath} --Log "notice file ${config.torLogPath}"`,
-        '[INFO] Using configuration file...',
-        '[INFO] Bootstrapping Tor network...'
-      ]);
+      // Generate a fake onion address
+      const onionAddress = `${Math.random().toString(36).substring(2, 15)}.onion`;
+      setConfig(prev => ({
+        ...prev,
+        torOnionAddress: onionAddress
+      }));
+      
+      appendToTorProxyLog(`Tor started successfully. Onion address: ${onionAddress}`);
       
       toast({
-        title: "Tor Started",
+        title: "Tor Proxy Started",
         description: "Tor proxy is now running.",
       });
     } catch (error) {
+      appendToTorProxyLog(`Error starting Tor: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
       toast({
         variant: "destructive",
-        title: "Error Starting Tor",
-        description: error instanceof Error ? error.message : "Unknown error",
+        title: "Failed to Start Tor",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
       });
     }
   };
-
-  const stopTorProxy = () => {
-    if (!torProxyRunning) return;
-    
-    // This would actually stop the Tor process
-    setTorProxyRunning(false);
-    
-    appendToTorProxyLog([
-      '[INFO] Stopping Tor...', 
-      '[INFO] Tor stopped successfully.'
-    ]);
-    
-    toast({
-      title: "Tor Stopped",
-      description: "Tor proxy has been stopped successfully.",
-    });
+  
+  const stopTorProxy = async () => {
+    try {
+      // This would actually stop Tor in a real implementation
+      appendToTorProxyLog('Stopping Tor proxy...');
+      
+      // Command to stop Tor would go here
+      // For demo purposes, simulate a delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setTorProxyRunning(false);
+      appendToTorProxyLog('Tor proxy stopped successfully.');
+      
+      toast({
+        title: "Tor Proxy Stopped",
+        description: "Tor proxy has been shut down.",
+      });
+    } catch (error) {
+      appendToTorProxyLog(`Error stopping Tor: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      toast({
+        variant: "destructive",
+        title: "Failed to Stop Tor",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+      });
+    }
   };
-
+  
   return {
     torProxyRunning,
     startTorProxy,

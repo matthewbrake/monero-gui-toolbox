@@ -7,6 +7,15 @@ export interface MoneroConfig {
   blockchainPath: string;
   configPath: string;
   logPath: string;
+  dataDir?: string;
+  torrcPath?: string;
+  torDataPath?: string;
+  torLogPath?: string;
+  i2pDataPath?: string;
+  i2pConfigPath?: string;
+  i2pTunnelsPath?: string;
+  i2pLogPath?: string;
+  banList?: string;
   
   // Network settings
   networkType: 'mainnet' | 'testnet' | 'stagenet';
@@ -16,31 +25,101 @@ export interface MoneroConfig {
   p2pBindPort: number;
   rpcBindIp: string;
   rpcBindPort: number;
+  p2pExternalPort?: number;
   
   // Proxy settings
   torEnabled: boolean;
   torProxyIp: string;
   torProxyPort: number;
+  torSocksPort?: number;
+  anonymousInboundTor?: string;
+  torOnionAddress?: string;
+  torOnly?: boolean;
+  txProxy?: string;
+  
   i2pEnabled: boolean;
   i2pProxyIp: string;
   i2pProxyPort: number;
+  i2pSamPort?: number;
+  i2pProxy?: string;
+  anonymousInboundI2p?: string;
+  i2pAddress?: string;
+  i2pOnly?: boolean;
   
   // Advanced settings
   limitRate: boolean;
   limitRateUp: number;
   limitRateDown: number;
-  disableRpcBan: boolean;  // Added this property
+  disableRpcBan: boolean;
   maxConcurrency: number;
+  maxConcurrentConnections?: number;
+  
+  // ZMQ settings
+  zmqEnabled?: boolean;
+  zmqBindIp?: string;
+  zmqPubPort?: number;
+  zmqPort?: number;
+  noZmq?: boolean;
+  
+  // RPC settings
+  rpcEnabled?: boolean;
+  restrictRpc?: boolean;
+  publicNode?: boolean;
+  rpcLogin?: string;
+  rpcSsl?: boolean;
+  rpcSslCert?: string;
+  rpcSslKey?: string;
+  confirmExternalBind?: boolean;
+  rpcPaymentAllowFreeLoopback?: boolean;
   
   // Flags
   pruningEnabled: boolean;
+  pruning?: boolean;
+  pruningSize?: number;
+  pruneSize?: number;
+  syncPrunedBlocks?: boolean;
   offlineMode: boolean;
+  offline?: boolean;
   disableIPv6: boolean;
   detach: boolean;
   syncMode: 'normal' | 'safe' | 'fast';
+  fastSync?: boolean;
+  fastBlockSync?: boolean;
+  
+  // Peer settings
+  outPeers?: number | string;
+  inPeers?: number | string;
+  hideMyPort?: boolean;
+  noIgd?: boolean;
+  allowLocalIp?: boolean;
+  addPeer?: string;
+  seedNode?: string;
+  addPriorityNode?: string;
+  addExclusiveNode?: string;
+  
+  // Log settings
+  logLevel?: number;
+  noConsoleLog?: boolean;
+  maxLogFileSize?: number | string;
+  maxLogFiles?: number | string;
+  
+  // Blockchain settings
+  blockSyncSize?: number | string;
+  dbSyncMode?: string;
+  enforceCheckpoints?: boolean;
+  disableCheckpoints?: boolean;
+  enableDnsBlocklist?: boolean;
+  
+  // Bootstrap settings
+  useBootstrapDaemon?: boolean;
+  bootstrapDaemonAddress?: string;
+  checkUpdates?: string;
   
   // Extra args
   extraArgs: string;
+  
+  // Additional settings
+  padTransactions?: boolean;
 }
 
 export interface StatusInfo {
@@ -59,6 +138,11 @@ export interface ConnectionTestResult {
   status: 'open' | 'closed' | 'timeout' | 'error';
   message: string;
   timestamp: string;
+  portStatus?: 'open' | 'closed' | 'timeout' | 'error';
+  rpcConnectivity?: boolean;
+  torConnectivity?: boolean;
+  i2pConnectivity?: boolean;
+  daemonVersion?: string;
 }
 
 export interface RpcCommandResult {
@@ -70,7 +154,7 @@ export interface RpcCommandResult {
 export interface MoneroContextType {
   // Config management
   config: MoneroConfig;
-  setConfig: (config: MoneroConfig) => void;
+  setConfig: (config: MoneroConfig | ((prev: MoneroConfig) => MoneroConfig)) => void;
   saveConfig: () => void;
   loadConfig: (configPath?: string) => void;
   showBinaryConfig: boolean;
