@@ -25,7 +25,7 @@ export interface MoneroConfig {
   p2pBindPort: number;
   rpcBindIp: string;
   rpcBindPort: number;
-  p2pExternalPort?: number;
+  p2pExternalPort: number;
   
   // Proxy settings
   torEnabled: boolean;
@@ -33,93 +33,93 @@ export interface MoneroConfig {
   torProxyPort: number;
   torSocksPort: number;
   torOnionAddress?: string;
-  torOnly?: boolean;
-  txProxy?: string;
-  anonymousInboundTor?: string;
+  torOnly: boolean;
+  txProxy: string;
+  anonymousInboundTor: string;
   
   i2pEnabled: boolean;
   i2pProxyIp: string;
   i2pProxyPort: number;
   i2pSamPort: number;
-  i2pProxy?: string;
+  i2pProxy: string;
   i2pAddress?: string;
-  i2pOnly?: boolean;
-  anonymousInboundI2p?: string;
+  i2pOnly: boolean;
+  anonymousInboundI2p: string;
   
   // Advanced settings
-  limitRate: boolean;
+  limitRate: number | string;  // Changed from boolean to number|string
   limitRateUp: number;
   limitRateDown: number;
   disableRpcBan: boolean;
   maxConcurrency: number;
-  maxConcurrentConnections?: number;
+  maxConcurrentConnections: number;
   
   // ZMQ settings
   zmqEnabled: boolean;
   zmqBindIp: string;
   zmqPubPort: number;
   zmqPort: number;
-  noZmq?: boolean;
+  noZmq: boolean;
   
   // RPC settings
   rpcEnabled: boolean;
-  restrictRpc?: boolean;
-  publicNode?: boolean;
-  rpcLogin?: string;
-  rpcSsl?: boolean;
-  rpcSslCert?: string;
-  rpcSslKey?: string;
-  confirmExternalBind?: boolean;
-  rpcPaymentAllowFreeLoopback?: boolean;
+  restrictRpc: boolean;
+  publicNode: boolean;
+  rpcLogin: string;
+  rpcSsl: boolean;
+  rpcSslCert: string;
+  rpcSslKey: string;
+  confirmExternalBind: boolean;
+  rpcPaymentAllowFreeLoopback: boolean;
   
   // Flags
   pruningEnabled: boolean;
   pruning: boolean;
-  pruningSize?: number;
-  pruneSize?: number;
-  syncPrunedBlocks?: boolean;
+  pruningSize: number;
+  pruneSize: number;
+  syncPrunedBlocks: boolean;
   offlineMode: boolean;
   offline: boolean;
   disableIPv6: boolean;
   detach: boolean;
   syncMode: 'normal' | 'safe' | 'fast';
-  fastSync?: boolean;
-  fastBlockSync?: boolean;
+  fastSync: boolean;
+  fastBlockSync: boolean;
   
   // Peer settings
-  outPeers?: number | string;
-  inPeers?: number | string;
-  hideMyPort?: boolean;
-  noIgd?: boolean;
-  allowLocalIp?: boolean;
-  addPeer?: string;
-  seedNode?: string;
-  addPriorityNode?: string;
-  addExclusiveNode?: string;
+  outPeers: number | string;
+  inPeers: number | string;
+  hideMyPort: boolean;
+  noIgd: boolean;
+  allowLocalIp: boolean;
+  addPeer: string;
+  seedNode: string;
+  addPriorityNode: string;
+  addExclusiveNode: string;
   
   // Log settings
   logLevel: number;
-  noConsoleLog?: boolean;
-  maxLogFileSize?: number | string;
-  maxLogFiles?: number | string;
+  noConsoleLog: boolean;
+  maxLogFileSize: number | string;
+  maxLogFiles: number | string;
   
   // Blockchain settings
-  blockSyncSize?: number | string;
-  dbSyncMode?: string;
-  enforceCheckpoints?: boolean;
-  disableCheckpoints?: boolean;
-  enableDnsBlocklist?: boolean;
+  blockSyncSize: number | string;
+  dbSyncMode: string;
+  enforceCheckpoints: boolean;
+  disableCheckpoints: boolean;
+  enableDnsBlocklist: boolean;
   
   // Bootstrap settings
-  useBootstrapDaemon?: boolean;
-  bootstrapDaemonAddress?: string;
-  checkUpdates?: string;
+  useBootstrapDaemon: boolean;
+  bootstrapDaemonAddress: string;
+  checkUpdates: string;
   
   // Extra args
   extraArgs: string;
   
   // Additional settings
-  padTransactions?: boolean;
+  padTransactions: boolean;
 }
 
 export interface StatusInfo {

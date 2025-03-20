@@ -68,11 +68,6 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     downloadLatestDaemon('linux');
   };
 
-  // Create a compatible wrapper for checkPortStatus function
-  const checkPortStatus = async (port: number, service: string) => {
-    return await checkPort(port, service);
-  };
-
   return (
     <MoneroContext.Provider
       value={{
@@ -100,7 +95,7 @@ export const MoneroProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         showBinaryConfig,
         setShowBinaryConfig,
         testPaths,
-        checkPortStatus,
+        checkPortStatus: checkPort,
         refreshLogs,
         testRpcCommand
       }}
