@@ -1,220 +1,114 @@
 
-// MoneroConfig interface defines all the configuration parameters
 export interface MoneroConfig {
-  // General/Basic settings
+  // Paths
   moneroPath: string;
-  dataDir: string;
-  logLevel: number;
-  noConsoleLog: boolean;
-  maxLogFileSize: string;
-  maxLogFiles: string;
-  
-  // Checkpoints and security
-  enforceCheckpoints: boolean;
-  disableCheckpoints: boolean;
-  banList: string;
-  enableDnsBlocklist: boolean;
-  
-  // Blockchain settings
-  pruning: boolean;
-  pruningSize: string;
-  syncPrunedBlocks: boolean;
-  blockSyncSize: string;
-  fastBlockSync: boolean;
-  checkUpdates: string;
-  useBootstrapDaemon: boolean;
-  bootstrapDaemonAddress: string;
-  dbSyncMode: string;
-  
-  // RPC settings
-  rpcEnabled: boolean;
-  rpcBindIp: string;
-  rpcBindPort: string;
-  restrictRpc: boolean;
-  rpcLogin: string;
-  rpcSsl: boolean;
-  rpcSslCert: string;
-  rpcSslKey: string;
-  confirmExternalBind: boolean;
-  rpcPaymentAllowFreeLoopback: boolean;
-  publicNode: boolean;
-  disableRpcBan: boolean;
-  
-  // P2P settings
-  p2pBindIp: string;
-  p2pBindPort: string;
-  p2pExternalPort: string;
-  hideMyPort: boolean;
-  noIgd: boolean;
-  offline: boolean;
-  allowLocalIp: boolean;
-  limitRate: string;
-  limitRateUp: string;
-  limitRateDown: string;
-  outPeers: string;
-  inPeers: string;
-  addPriorityNode: string;
-  addExclusiveNode: string;
-  seedNode: string;
-  
-  // Additional properties for DaemonConfigTab
-  zmqPort: string;
-  maxConcurrentConnections: string;
-  addPeer: string;
-  pruneSize: string;
-  fastSync: boolean;
-  extraArgs: string;
-  
-  // Tor settings
-  torEnabled: boolean;
   torPath: string;
-  torrcPath: string;
-  torDataPath: string;
-  torLogPath: string;
-  torSocksPort: string;
-  txProxy: string;
-  torOnly: boolean;
-  anonymousInboundTor: string;
-  torOnionAddress: string;
-  padTransactions: boolean;
-  
-  // I2P settings
-  i2pEnabled: boolean;
   i2pPath: string;
-  i2pDataPath: string;
-  i2pConfigPath: string;
-  i2pTunnelsPath: string;
-  i2pLogPath: string;
-  i2pSamPort: string;
-  i2pProxy: string;
-  anonymousInboundI2p: string;
-  i2pOnly: boolean;
-  i2pAddress: string;
+  blockchainPath: string;
+  configPath: string;
+  logPath: string;
   
-  // ZMQ settings
-  zmqEnabled: boolean;
-  zmqBindIp: string;
-  zmqPubPort: string;
-  noZmq: boolean;
+  // Network settings
+  networkType: 'mainnet' | 'testnet' | 'stagenet';
   
-  // Miscellaneous
-  maxConcurrency: string;
+  // Node settings
+  p2pBindIp: string;
+  p2pBindPort: number;
+  rpcBindIp: string;
+  rpcBindPort: number;
+  
+  // Proxy settings
+  torEnabled: boolean;
+  torProxyIp: string;
+  torProxyPort: number;
+  i2pEnabled: boolean;
+  i2pProxyIp: string;
+  i2pProxyPort: number;
+  
+  // Advanced settings
+  limitRate: boolean;
+  limitRateUp: number;
+  limitRateDown: number;
+  disableRpcBan: boolean;  // Added this property
+  maxConcurrency: number;
+  
+  // Flags
+  pruningEnabled: boolean;
+  offlineMode: boolean;
+  disableIPv6: boolean;
+  detach: boolean;
+  syncMode: 'normal' | 'safe' | 'fast';
+  
+  // Extra args
+  extraArgs: string;
 }
 
-// Interfaces for connection testing
-export interface PortStatus {
-  checked: boolean;
-  open?: boolean;
-  port?: string;
-}
-
-export interface TorConnectivity {
-  tested: boolean;
-  success?: boolean;
-  output?: string;
-  additionalTests?: {
-    torProject?: {
-      success: boolean;
-      output: string;
-    };
-  };
-}
-
-export interface I2pConnectivity {
-  tested: boolean;
-  success?: boolean;
-  output?: string;
-  additionalTests?: {
-    i2pSite?: {
-      success: boolean;
-      output: string;
-    };
-  };
-}
-
-export interface RpcConnectivity {
-  tested: boolean;
-  success?: boolean;
-  output?: string;
-}
-
-export interface DaemonVersion {
-  checked: boolean;
-  current?: string;
-  latest?: string;
-  needsUpdate?: boolean;
+export interface StatusInfo {
+  blockHeight: number;
+  connections: number;
+  networkHashrate: number;
+  miningStatus: boolean;
+  syncStatus: number; // percentage (0-100)
+  version: string;
+  uptime: number; // in seconds
 }
 
 export interface ConnectionTestResult {
-  torConnectivity: TorConnectivity;
-  i2pConnectivity: I2pConnectivity;
-  rpcConnectivity: RpcConnectivity;
-  daemonVersion: DaemonVersion;
-  portStatus: {
-    tor: PortStatus;
-    i2p: PortStatus;
-    monero: PortStatus;
-  };
-}
-
-// Interface for status information
-export interface StatusInfo {
-  blockHeight: number;
-  networkHashrate: string;
-  connections: number;
-  syncStatus: number;
-  version: string;
-}
-
-// Define LogEntry and LogSource for the LogsManager
-export type LogLevel = 'info' | 'warning' | 'error' | 'debug';
-export type LogSource = 'console' | 'logFile' | 'torProxy' | 'i2pProxy';
-
-export interface LogEntry {
-  timestamp: string;
-  level: LogLevel;
+  port: number;
+  service: string;
+  status: 'open' | 'closed' | 'timeout' | 'error';
   message: string;
-  source: LogSource;
+  timestamp: string;
 }
 
-// Interface for log data
-export interface LogData {
-  console: string[];
-  logFile: string[];
-  torProxy: string[];
-  i2pProxy: string[];
+export interface RpcCommandResult {
+  success: boolean;
+  result: any;
+  error?: string;
 }
 
-// Context interface that combines all of our state and functions
 export interface MoneroContextType {
+  // Config management
   config: MoneroConfig;
-  setConfig: React.Dispatch<React.SetStateAction<MoneroConfig>>;
+  setConfig: (config: MoneroConfig) => void;
+  saveConfig: () => void;
+  loadConfig: (configPath?: string) => void;
+  showBinaryConfig: boolean;
+  setShowBinaryConfig: (show: boolean) => void;
+  testPaths: () => Promise<void>;
+  
+  // Daemon control
   isRunning: boolean;
   startNode: () => void;
   stopNode: () => void;
-  logs: LogData;
-  activeTab: string;
-  setActiveTab: React.Dispatch<React.SetStateAction<string>>;
-  saveConfig: () => void;
-  loadConfig: (configPath?: string) => void;
   statusInfo: StatusInfo;
-  testConnectivity: () => Promise<void>;
-  connectionTestResults: ConnectionTestResult;
   downloadLatestDaemon: () => void;
   isDownloading: boolean;
+  
+  // Proxy control
   torProxyRunning: boolean;
   i2pProxyRunning: boolean;
   startTorProxy: () => void;
   stopTorProxy: () => void;
   startI2PProxy: () => void;
   stopI2PProxy: () => void;
-  showBinaryConfig: boolean;
-  setShowBinaryConfig: React.Dispatch<React.SetStateAction<boolean>>;
-  testPaths: () => Promise<void>;
-  checkPortStatus: (type: 'tor' | 'i2p' | 'monero') => Promise<void>;
+  
+  // UI state
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  
+  // Logs
+  logs: {
+    console: string[];
+    logFile: string[];
+    torProxy: string[];
+    i2pProxy: string[];
+  };
   refreshLogs: () => void;
-  testRpcCommand: (proxyType: 'clearnet' | 'tor' | 'i2p') => Promise<{
-    success: boolean;
-    output: string;
-  }>;
+  
+  // Connectivity testing
+  testConnectivity: () => Promise<void>;
+  connectionTestResults: ConnectionTestResult[];
+  checkPortStatus: (port: number, service: string) => Promise<void>;
+  testRpcCommand: (command: string, params?: any) => Promise<RpcCommandResult>;
 }

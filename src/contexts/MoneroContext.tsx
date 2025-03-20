@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState } from 'react';
 import { MoneroContextType } from '../types/monero';
-import { useLogsManager } from '../contexts/logs/useLogsManager';
+import { useLogsManager } from './logs/useLogsManager';
 import { useConfigManager } from './config/useConfigManager';
 import { useMoneroManager } from './monero/useMoneroManager';
 import { useTorProxyManager } from './proxy/useTorProxyManager';
